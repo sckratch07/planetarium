@@ -145,8 +145,8 @@ Grid::~Grid()
 void Grid::draw(sf::RenderWindow& target) const
 {
     float left   = 0.f;
-    float right  = m_grid_size.x * m_cell_size.x;
     float top    = 0.f;
+    float right  = m_grid_size.x * m_cell_size.x;
     float bottom = m_grid_size.y * m_cell_size.y;
 
     // Aligner sur la grille
