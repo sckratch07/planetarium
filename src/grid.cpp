@@ -93,24 +93,28 @@ Grid::Grid(QWidget* parent) :
     connect(grid_size_width, &QSpinBox::valueChanged, [this](int value)
         {
             m_grid_size.x = value;
+            emit grid_size_changed(m_grid_size);
         }
     );
 
     connect(grid_size_height, &QSpinBox::valueChanged, [this](int value)
         {
             m_grid_size.y = value;
+            emit grid_size_changed(m_grid_size);
         }
     );
 
     connect(cell_size_width, &QSpinBox::valueChanged, [this](int value)
         {
             m_cell_size.x = value;
+            emit cell_size_changed(m_cell_size);
         }
     );
 
     connect(cell_size_height, &QSpinBox::valueChanged, [this](int value)
         {
             m_cell_size.y = value;
+            emit cell_size_changed(m_cell_size);
         }
     );
 
@@ -140,6 +144,16 @@ Grid::~Grid()
     settings.setValue("color_b", m_color.b);
     settings.setValue("color_a", m_color.a);
     settings.endGroup();
+}
+
+const sf::Vector2i& Grid::grid_size() const
+{
+    return m_grid_size;
+}
+
+const sf::Vector2i& Grid::cell_size() const
+{
+    return m_cell_size;
 }
 
 void Grid::draw(sf::RenderWindow& target) const

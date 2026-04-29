@@ -9,9 +9,9 @@
 ToolBar::ToolBar(QWidget* parent) :
     QToolBar(parent)
 {
-    QToolBar::setObjectName("tool_bar");
-    QToolBar::setFloatable(false);
-    QToolBar::setMovable(false);
+    setObjectName("tool_bar");
+    setFloatable(false);
+    setMovable(false);
 
     QSettings settings("Game Academy", "Planetarium");
     
