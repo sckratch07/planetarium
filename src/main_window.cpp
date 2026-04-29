@@ -1,9 +1,12 @@
 #include <main_window.hpp>
-#include <map_preview.hpp>
 
 #include <tool_bar.hpp>
+#include <map_preview.hpp>
+#include <grid.hpp>
+#include <palette.hpp>
 
 #include <QSettings>
+#include <QDockWidget>
 
 MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent)
@@ -20,6 +23,16 @@ MainWindow::MainWindow(QWidget* parent) :
 
     auto* map_preview = new MapPreview(this);
     setCentralWidget(map_preview);
+
+    auto* grid = new Grid(this);
+    auto* grid_dock = new QDockWidget("Grid", this);
+    grid_dock->setObjectName("GridDock");
+    grid_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    grid_dock->setWidget(grid);
+
+    addDockWidget(Qt::LeftDockWidgetArea, grid_dock);
+
+    connect(&map_preview->sfml_window(), &SfmlWindow::rendered, grid, &Grid::draw);
 }
 
 MainWindow::~MainWindow()

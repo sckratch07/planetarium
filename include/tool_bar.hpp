@@ -9,7 +9,7 @@ class ToolBar : public QToolBar
     Q_OBJECT
 public:
     explicit ToolBar(QWidget* parent = nullptr);
-    ~ToolBar();
+    ~ToolBar() override;
 
 protected:
     QMenu* create_menu(QString name);

@@ -10,9 +10,9 @@ class MapPreview : public QWidget
     Q_OBJECT
 public:
     explicit MapPreview(QWidget* parent = nullptr);
+    ~MapPreview() override;
 
-protected:
-    void resizeEvent(QResizeEvent* event) override;
+    SfmlWindow& sfml_window();
 
 private:
     SfmlWindow m_sfml_window;

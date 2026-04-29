@@ -15,9 +15,15 @@ public:
     explicit SfmlWindow(QWindow* parent = nullptr);
     ~SfmlWindow();
 
+    sf::RenderWindow& renderer();
+
 protected:
     void exposeEvent(QExposeEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
+
+signals:
+    void event(const std::optional<sf::Event>& event, sf::RenderWindow& target);
+    void rendered(sf::RenderWindow& target);
 
 private slots:
     void render();
