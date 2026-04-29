@@ -11,7 +11,7 @@
 MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent)
 {
-    QSettings settings("Game Academy", "EarthPower");
+    QSettings settings("Game Academy", "Planetarium");
 
     settings.beginGroup("main_window");
     restoreGeometry(settings.value("geometry").toByteArray());
@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
 MainWindow::~MainWindow()
 {
-    QSettings settings("Game Academy", "EarthPower");
+    QSettings settings("Game Academy", "Planetarium");
 
     settings.beginGroup("main_window");
     settings.setValue("geometry", saveGeometry());

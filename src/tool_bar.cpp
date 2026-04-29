@@ -13,7 +13,7 @@ ToolBar::ToolBar(QWidget* parent) :
     QToolBar::setFloatable(false);
     QToolBar::setMovable(false);
 
-    QSettings settings("Game Academy", "EarthPower");
+    QSettings settings("Game Academy", "Planetarium");
     
     settings.beginGroup("tool_bar");
     ThemeManager::Theme current_theme = static_cast<ThemeManager::Theme>(settings.value("theme", 0).value<int>());
@@ -52,7 +52,7 @@ ToolBar::ToolBar(QWidget* parent) :
 
 ToolBar::~ToolBar()
 {
-    QSettings settings("Game Academy", "EarthPower");
+    QSettings settings("Game Academy", "Planetarium");
     
     settings.beginGroup("tool_bar");
     settings.setValue("theme", static_cast<int>(theme_manager.theme()));

@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication::setOrganizationName("Game Academy");
-    QCoreApplication::setApplicationName("EarthPower");
+    QCoreApplication::setApplicationName("Planetarium");
 
     QApplication a(argc, argv);
 

@@ -6,7 +6,7 @@
 
 MapPreview::MapPreview(QWidget* parent) : QWidget(parent)
 {
-    QSettings settings("Game Academy", "EarthPower");
+    QSettings settings("Game Academy", "Planetarium");
 
     settings.beginGroup("map_preview");
     restoreGeometry(settings.value("geometry").toByteArray());
@@ -25,7 +25,7 @@ MapPreview::MapPreview(QWidget* parent) : QWidget(parent)
 
 MapPreview::~MapPreview()
 {
-    QSettings settings("Game Academy", "EarthPower");
+    QSettings settings("Game Academy", "Planetarium");
 
     settings.beginGroup("map_preview");
     settings.setValue("geometry", saveGeometry());

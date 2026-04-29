@@ -12,7 +12,7 @@
 Grid::Grid(QWidget* parent) :
     QWidget(parent)
 {
-    QSettings settings("Game Academy", "EarthPower");
+    QSettings settings("Game Academy", "Planetarium");
 
     settings.beginGroup("grid");
     m_grid_size.x = settings.value("grid_size_x", 50).toInt();
@@ -126,7 +126,7 @@ Grid::Grid(QWidget* parent) :
 
 Grid::~Grid()
 {
-    QSettings settings("Game Academy", "EarthPower");
+    QSettings settings("Game Academy", "Planetarium");
 
     settings.beginGroup("grid");
     settings.setValue("grid_size_x", m_grid_size.x);
