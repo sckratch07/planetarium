@@ -1,0 +1,14 @@
+{
+  "dependencies": [
+    {
+      "name": "sfml",
+      "features": [
+        "audio",
+        "graphics",
+        "window"
+      ],
+      "version>=": "3.0.2"
+    },
+    "nlohmann-json"
+  ]
+}
