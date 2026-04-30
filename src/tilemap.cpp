@@ -9,7 +9,7 @@
 #include <fstream>
 
 Tilemap::Tilemap(QObject* parent) :
-    QObject(parent), m_selected_rect(nullptr)
+    QObject(parent), m_selected_rect(nullptr), m_texture(nullptr)
 {
     
 }
@@ -35,14 +35,13 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
 
         QRectF rect = m_selected_rect->rect();
 
-        Tile tile;
-        tile.pos = grid_pos;
-        tile.rect = sf::IntRect(
-            { (int)rect.x(), (int)rect.y() },
-            { (int)rect.width(), (int)rect.height() }
-        );
-
-        m_tiles.push_back(tile);
+        m_tiles.push_back({
+            grid_pos,
+            sf::IntRect(
+                { (int)rect.x(), (int)rect.y() },
+                { (int)rect.width(), (int)rect.height() }
+            )
+        });
     }
     else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
     {
@@ -64,8 +63,10 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
 
 void Tilemap::draw(sf::RenderWindow& target)
 {
+    if (!m_texture || m_tiles.empty()) return;
+
     sf::RectangleShape shape(m_cell_size);
-    shape.setTexture(&m_texture);
+    shape.setTexture(m_texture.get());
 
     for (const auto& tile : m_tiles)
     {
@@ -95,9 +96,12 @@ void Tilemap::cell_size_changed(const sf::Vector2i& new_size)
     m_cell_size = sf::Vector2f(new_size);
 }
 
-void Tilemap::texture_changed(const std::string& path)
+void Tilemap::texture_changed(const std::string path)
 {
-    m_texture.loadFromFile(path);
+    if(m_texture)
+        m_texture.reset();
+
+    m_texture = std::make_unique<sf::Texture>(path);
 }
 
 void Tilemap::selected_rect_changed(QGraphicsRectItem* rect)

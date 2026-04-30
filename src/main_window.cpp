@@ -16,10 +16,6 @@ MainWindow::MainWindow(QWidget* parent) :
     setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AllowTabbedDocks);
     setAnimated(false);
     
-    QWidget* central = new QWidget(this);
-    central->setFixedSize(0, 0);
-    setCentralWidget(central);
-    
     auto* tool_bar = new ToolBar(this);
     addToolBar(tool_bar);
     
@@ -28,6 +24,7 @@ MainWindow::MainWindow(QWidget* parent) :
     map_preview_dock->setObjectName("MapPreviewDock");
     map_preview_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
     map_preview_dock->setWidget(map_preview);
+    setCentralWidget(map_preview_dock);
     
     auto* grid = new Grid(this);
     auto* grid_dock = new QDockWidget("Grid", this);
@@ -46,7 +43,7 @@ MainWindow::MainWindow(QWidget* parent) :
     addDockWidget(Qt::LeftDockWidgetArea, grid_dock);
     addDockWidget(Qt::LeftDockWidgetArea, map_preview_dock);
     addDockWidget(Qt::RightDockWidgetArea, palette_dock);
-    
+
     QSettings settings("Game Academy", "Planetarium");
     settings.beginGroup("main_window");
     restoreGeometry(settings.value("geometry").toByteArray());
@@ -62,6 +59,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     connect(grid, &Grid::grid_size_changed, tilemap, &Tilemap::grid_size_changed);
     connect(grid, &Grid::cell_size_changed, tilemap, &Tilemap::cell_size_changed);
+    connect(grid, &Grid::cell_size_changed, palette->view(), &TilesetView::tile_size_changed);
 
     connect(palette, &Palette::texture_changed, tilemap, &Tilemap::texture_changed);
     connect(palette->view(), &TilesetView::selected_rect_changed, tilemap, &Tilemap::selected_rect_changed);

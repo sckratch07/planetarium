@@ -10,8 +10,10 @@ class TilesetView : public QGraphicsView
 public:
     explicit TilesetView(QWidget* parent = nullptr);
 
+    void reset_rect();
+
 public slots:
-    void tile_size_changed(const sf::Vector2f& new_size);
+    void tile_size_changed(const sf::Vector2i& new_size);
 
 signals:
     void selected_rect_changed(QGraphicsRectItem* rect);

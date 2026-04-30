@@ -20,7 +20,7 @@ public slots:
 
     void grid_size_changed(const sf::Vector2i& new_size);
     void cell_size_changed(const sf::Vector2i& new_size);
-    void texture_changed(const std::string& path);
+    void texture_changed(const std::string path);
     void selected_rect_changed(QGraphicsRectItem* rect);
 
     void save();
@@ -33,7 +33,7 @@ private:
     };
 
     std::vector<Tile> m_tiles;
-    sf::Texture m_texture;
+    std::unique_ptr<sf::Texture> m_texture;
 
     sf::Vector2i m_grid_size;
     sf::Vector2f m_cell_size;

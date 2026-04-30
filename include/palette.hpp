@@ -4,6 +4,8 @@
 #include <tileset_view.hpp>
 #include <SFML/Graphics/Texture.hpp>
 
+class QListWidget;
+
 class Palette : public QWidget
 {
     Q_OBJECT
@@ -14,10 +16,10 @@ public:
     const TilesetView* view() const;
 
 signals:
-    void tile_size_changed(const sf::Vector2f& new_size);
-    void texture_changed(const std::string& path);
+    void texture_changed(const std::string path);
 
 private:
+    QListWidget* m_tree_view;
     TilesetView m_view;
     sf::Vector2f m_tile_size;
 };

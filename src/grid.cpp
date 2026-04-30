@@ -1,7 +1,5 @@
 #include <grid.hpp>
 
-#include <utils/color_picker.hpp>
-
 #include <QSettings>
 #include <QBoxLayout>
 #include <QLabel>
@@ -20,11 +18,6 @@ Grid::Grid(QWidget* parent) :
 
     m_cell_size.x = settings.value("cell_size_x", 32).toInt();
     m_cell_size.y = settings.value("cell_size_y", 32).toInt();
-
-    m_color.r = settings.value("color_r", 255).toInt();
-    m_color.g = settings.value("color_g", 255).toInt();
-    m_color.b = settings.value("color_b", 255).toInt();
-    m_color.a = settings.value("color_a", 255).toInt();
     settings.endGroup();
 
     auto* grid_width_layout = new QHBoxLayout();
@@ -79,16 +72,8 @@ Grid::Grid(QWidget* parent) :
 
     main_layout->addLayout(grid_width_layout);
     main_layout->addLayout(grid_height_layout);
-
-    main_layout->addSpacing(5);
-
     main_layout->addLayout(cell_width_layout);
     main_layout->addLayout(cell_height_layout);
-    
-    main_layout->addSpacing(10);
-
-    auto* color_picker = new ColorPickerWidget(this);
-    main_layout->addWidget(color_picker);
 
     connect(grid_size_width, &QSpinBox::valueChanged, [this](int value)
         {
@@ -117,15 +102,6 @@ Grid::Grid(QWidget* parent) :
             emit cell_size_changed(m_cell_size);
         }
     );
-
-    connect(color_picker, &ColorPickerWidget::color_changed, [this](const QColor& c)
-        {
-            m_color.r = c.red();
-            m_color.g = c.green();
-            m_color.b = c.blue();
-            m_color.a = c.alpha();
-        }
-    );
 }
 
 Grid::~Grid()
@@ -138,11 +114,6 @@ Grid::~Grid()
 
     settings.setValue("cell_size_x", m_cell_size.x);
     settings.setValue("cell_size_y", m_cell_size.y);
-
-    settings.setValue("color_r", m_color.r);
-    settings.setValue("color_g", m_color.g);
-    settings.setValue("color_b", m_color.b);
-    settings.setValue("color_a", m_color.a);
     settings.endGroup();
 }
 
@@ -174,14 +145,14 @@ void Grid::draw(sf::RenderWindow& target) const
 
     for (float x = firstX; x <= lastX; x += m_cell_size.x)
     {
-        lines.append(sf::Vertex(sf::Vector2f(x, top), m_color));
-        lines.append(sf::Vertex(sf::Vector2f(x, bottom), m_color));
+        lines.append(sf::Vertex(sf::Vector2f(x, top), sf::Color::White));
+        lines.append(sf::Vertex(sf::Vector2f(x, bottom), sf::Color::White));
     }
 
     for (float y = firstY; y <= lastY; y += m_cell_size.y)
     {
-        lines.append(sf::Vertex(sf::Vector2f(left, y), m_color));
-        lines.append(sf::Vertex(sf::Vector2f(right, y), m_color));
+        lines.append(sf::Vertex(sf::Vector2f(left, y), sf::Color::White));
+        lines.append(sf::Vertex(sf::Vector2f(right, y), sf::Color::White));
     }
 
     target.draw(lines);

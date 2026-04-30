@@ -9,9 +9,9 @@ TilesetView::TilesetView(QWidget* parent) :
 
 }
 
-void TilesetView::tile_size_changed(const sf::Vector2f& new_size)
+void TilesetView::tile_size_changed(const sf::Vector2i& new_size)
 {
-    m_tile_size = new_size;
+    m_tile_size = sf::Vector2f(new_size);
 }
 
 void TilesetView::wheelEvent(QWheelEvent* event)
