@@ -2,6 +2,7 @@
 #define TILEMAP_HPP
 
 #include <QObject>
+#include <QString>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <vector>
@@ -22,6 +23,9 @@ public slots:
     void cell_size_changed(const sf::Vector2i& new_size);
     void texture_changed(const std::string path);
     void selected_rect_changed(QGraphicsRectItem* rect);
+    void selected_type_changed(const QString& type);
+    void clear_selected_type();
+    void removed_type(const QString& type);
 
     void save();
     
@@ -30,6 +34,7 @@ private:
     {
         sf::Vector2i pos;
         sf::IntRect rect;
+        std::string type = "None";
     };
 
     std::vector<Tile> m_tiles;
@@ -38,6 +43,7 @@ private:
     sf::Vector2i m_grid_size;
     sf::Vector2f m_cell_size;
     QGraphicsRectItem* m_selected_rect;
+    std::string m_selected_type;
 };
 
 #endif

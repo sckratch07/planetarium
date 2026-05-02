@@ -16,22 +16,34 @@ Tilemap::Tilemap(QObject* parent) :
 
 void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& target)
 {
-    if (!event || !m_selected_rect) return;
+    if (!event) return;
+
+    sf::Vector2f mouse_pos = target.mapPixelToCoords(sf::Mouse::getPosition(target));
+    sf::Vector2i grid_pos(
+        (int)mouse_pos.x / m_cell_size.x,
+        (int)mouse_pos.y / m_cell_size.y
+    );
+
+    if (grid_pos.x < 0 || grid_pos.y < 0 ||
+        grid_pos.x >= m_grid_size.x || grid_pos.y >= m_grid_size.y)
+        return;
+
+    auto existing = std::find_if(m_tiles.begin(), m_tiles.end(), [&](const Tile& tile)
+    {
+        return tile.pos == grid_pos;
+    });
+
     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
     {
-        sf::Vector2f mouse_pos = target.mapPixelToCoords(sf::Mouse::getPosition(target));
-        sf::Vector2i grid_pos(
-            (int)mouse_pos.x / m_cell_size.x,
-            (int)mouse_pos.y / m_cell_size.y
-        );
-
-        if (grid_pos.x >= m_grid_size.x || grid_pos.y >= m_grid_size.y)
-            return;
-
-        for (const auto& tile : m_tiles)
+        if (!m_selected_type.empty() && !m_selected_rect)
         {
-            if (tile.pos == grid_pos) return;
+            if (existing != m_tiles.end())
+                existing->type = m_selected_type;
+            return;
         }
+
+        if (existing != m_tiles.end()) return;
+        if (!m_selected_rect) return;
 
         QRectF rect = m_selected_rect->rect();
 
@@ -40,24 +52,23 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
             sf::IntRect(
                 { (int)rect.x(), (int)rect.y() },
                 { (int)rect.width(), (int)rect.height() }
-            )
+            ),
+            m_selected_type
         });
     }
     else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
     {
-        sf::Vector2f mouse_pos = target.mapPixelToCoords(sf::Mouse::getPosition(target));
-        sf::Vector2i grid_pos(
-            (int)mouse_pos.x / m_cell_size.x,
-            (int)mouse_pos.y / m_cell_size.y
-        );
-
-        if (grid_pos.x >= m_grid_size.x || grid_pos.y >= m_grid_size.y)
-            return;
-
-        std::erase_if(m_tiles, [&](const Tile& tile)
+        if (!m_selected_type.empty())
         {
-            return tile.pos == grid_pos;
-        });
+            std::erase_if(m_tiles, [&](const Tile& tile)
+            {
+                return tile.pos == grid_pos;
+            });
+        }
+        else
+        {
+            existing->type = m_selected_type;
+        }
     }
 }
 
@@ -78,6 +89,19 @@ void Tilemap::draw(sf::RenderWindow& target)
         shape.setTextureRect(tile.rect);
 
         target.draw(shape);
+
+        if (!m_selected_type.empty() && tile.type == m_selected_type)
+        {
+            sf::RectangleShape highlight(m_cell_size);
+            highlight.setPosition(
+                { tile.pos.x * m_cell_size.x,
+                tile.pos.y * m_cell_size.y }
+            );
+            highlight.setFillColor(sf::Color(255, 0, 0, 80));
+            highlight.setOutlineColor(sf::Color::Red);
+            highlight.setOutlineThickness(1.f);
+            target.draw(highlight);
+        }
     }
 }
 
@@ -109,6 +133,26 @@ void Tilemap::selected_rect_changed(QGraphicsRectItem* rect)
     m_selected_rect = rect;
 }
 
+void Tilemap::selected_type_changed(const QString& type)
+{
+    m_selected_type = type.toStdString();
+}
+
+void Tilemap::clear_selected_type()
+{
+    m_selected_type.clear();
+}
+
+void Tilemap::removed_type(const QString& type)
+{
+    const std::string removed = type.toStdString();
+    for (auto& tile : m_tiles)
+    {
+        if (tile.type == removed)
+            tile.type.clear();
+    }
+}
+
 void Tilemap::save()
 {
     if (QString path = QFileDialog::getExistingDirectory(nullptr, "Select save folder", ""); !path.isEmpty())
@@ -136,6 +180,7 @@ void Tilemap::save()
             t["rect_top"] = tile.rect.position.y;
             t["rect_width"] = tile.rect.size.x;
             t["rect_height"] = tile.rect.size.y;
+            t["type"] = tile.type;
 
             data["tiles"].push_back(t);
         }

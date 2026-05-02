@@ -4,6 +4,10 @@
 #include <QBoxLayout>
 #include <QLabel>
 #include <QSpinBox>
+#include <QPushButton>
+#include <QListWidget>
+#include <QDialog>
+#include <QLineEdit>
 
 #include <SFML/Graphics/VertexArray.hpp>
 
@@ -68,12 +72,35 @@ Grid::Grid(QWidget* parent) :
     cell_size_height->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     cell_height_layout->addWidget(cell_size_height);
 
+    auto* add_type_button = new QPushButton("Add Type", this);
+    add_type_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+    auto* remove_type_button = new QPushButton("Remove Type", this);
+    remove_type_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+    m_type_list = new QListWidget(this);
+    m_type_list->setSizePolicy({QSizePolicy::Preferred, QSizePolicy::Preferred});
+    m_type_list->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
+
+    auto* button_layout = new QHBoxLayout();
+    button_layout->addWidget(add_type_button);
+    button_layout->addWidget(remove_type_button);
+
     auto* main_layout = new QVBoxLayout(this);
 
     main_layout->addLayout(grid_width_layout);
     main_layout->addLayout(grid_height_layout);
     main_layout->addLayout(cell_width_layout);
     main_layout->addLayout(cell_height_layout);
+    main_layout->addLayout(button_layout);
+    main_layout->addWidget(m_type_list);
+
+    auto* dialog = new QDialog(this);
+    auto* enter_name_label = new QLabel("Enter type's name", dialog);
+    auto* name_edit = new QLineEdit(dialog);
+    auto* dialog_layout = new QHBoxLayout(dialog);
+    dialog_layout->addWidget(enter_name_label);
+    dialog_layout->addWidget(name_edit);
 
     connect(grid_size_width, &QSpinBox::valueChanged, [this](int value)
         {
@@ -102,6 +129,65 @@ Grid::Grid(QWidget* parent) :
             emit cell_size_changed(m_cell_size);
         }
     );
+
+    connect(add_type_button, &QPushButton::pressed, this, [dialog]
+        {
+            dialog->open();
+        }
+    );
+
+    connect(name_edit, &QLineEdit::editingFinished, this, [this, dialog, name_edit]
+        {
+            if (name_edit->text().isEmpty()) return;
+            auto* item = new QListWidgetItem(name_edit->text(), m_type_list);
+            m_type_list->addItem(item);
+            item->setSelected(true);
+            dialog->close();
+        }
+    );
+
+    connect(remove_type_button, &QPushButton::pressed, this, [this]
+        {
+            const auto selected = m_type_list->selectedItems();
+            if (selected.isEmpty()) return;
+
+            auto* item = selected[0];
+            QString removed_type = item->text();
+
+            bool blocked = m_type_list->blockSignals(true);
+            delete item;
+            m_type_list->blockSignals(blocked);
+
+            m_selected_type.clear();
+            emit tile_type_selection_cleared();
+            emit tile_type_removed(removed_type);
+        }
+    );
+
+    connect(m_type_list, &QListWidget::itemSelectionChanged, this, [this]
+        {
+            const auto selected = m_type_list->selectedItems();
+            if (selected.isEmpty())
+            {
+                m_selected_type.clear();
+                emit tile_type_selection_cleared();
+                return;
+            }
+
+            auto* item = selected[0];
+            m_selected_type = item->text();
+            emit tile_type_changed(m_selected_type);
+        }
+    );
+}
+
+void Grid::clear_type_selection()
+{
+    bool blocked = m_type_list->blockSignals(true);
+    m_type_list->clearSelection();
+    m_type_list->blockSignals(blocked);
+    m_selected_type.clear();
+    emit tile_type_selection_cleared();
 }
 
 Grid::~Grid()

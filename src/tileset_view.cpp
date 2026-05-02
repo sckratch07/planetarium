@@ -4,9 +4,15 @@
 #include <QWheelEvent>
 
 TilesetView::TilesetView(QWidget* parent) :
-    QGraphicsView(parent), m_selection_rect(nullptr)
+    QGraphicsView(parent), m_selection_rect(nullptr), m_tile_size({32, 32})
 {
 
+}
+
+void TilesetView::reset_rect()
+{
+    m_selection_rect = nullptr;
+    emit selected_rect_changed(nullptr);
 }
 
 void TilesetView::tile_size_changed(const sf::Vector2i& new_size)

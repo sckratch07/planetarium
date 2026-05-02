@@ -1,4 +1,4 @@
-#include <palette.hpp>
+﻿#include <palette.hpp>
 #include <tileset_view.hpp>
 
 #include <QListWidget>
@@ -19,7 +19,7 @@ Palette::Palette(QWidget* parent) :
     restoreGeometry(settings.value("geometry").toByteArray());
     settings.endGroup();
 
-    auto* load_button = new QPushButton("Add Level", this);
+    auto* load_button = new QPushButton("Add Tileset", this);
     load_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     m_tree_view->setSizePolicy({QSizePolicy::Preferred, QSizePolicy::Preferred});
@@ -45,6 +45,7 @@ Palette::Palette(QWidget* parent) :
                 item->setSelected(true);
 
                 scene->clear();
+                m_view.reset_rect();
                 scene->addPixmap(pixmap);
                 scene->setSceneRect(pixmap.rect());
 
@@ -53,10 +54,30 @@ Palette::Palette(QWidget* parent) :
         }
     );
 
-    connect(m_tree_view, &QListWidget::itemSelectionChanged, this, [this]()
+    connect(m_tree_view, &QListWidget::itemSelectionChanged, this, [this, scene]()
         {
-            std::string path = m_tree_view->selectedItems()[0]->text().toStdString().c_str();
+            const auto selected = m_tree_view->selectedItems();
+            if (selected.isEmpty())
+            {
+                emit tileset_selected(false);
+                return;
+            }
+
+            auto* item = selected[0];
+            std::string path = item->text().toStdString();
+
+            QPixmap pixmap(path.c_str());
+            if (pixmap.isNull()) return;
+
+            scene->clear();
+            m_view.reset_rect();
+            scene->addPixmap(pixmap);
+            scene->setSceneRect(pixmap.rect());
+
+            m_view.fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+
             emit texture_changed(path);
+            emit tileset_selected(true);
         }
     );
 }
@@ -73,3 +94,18 @@ const TilesetView* Palette::view() const
 {
     return &m_view;
 }
+
+void Palette::reset_selection()
+{
+    m_tree_view->clearSelection();
+    m_view.reset_rect();
+}
+
+void Palette::clear_tileset_selection()
+{
+    bool blocked = m_tree_view->blockSignals(true);
+    m_tree_view->clearSelection();
+    m_tree_view->blockSignals(blocked);
+    m_view.reset_rect();
+}
+

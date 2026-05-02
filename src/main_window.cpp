@@ -64,6 +64,17 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(palette, &Palette::texture_changed, tilemap, &Tilemap::texture_changed);
     connect(palette->view(), &TilesetView::selected_rect_changed, tilemap, &Tilemap::selected_rect_changed);
 
+    connect(palette, &Palette::tileset_selected, grid, [grid](bool selected)
+        {
+            if (selected) grid->clear_type_selection();
+        }
+    );
+
+    connect(grid, &Grid::tile_type_changed, palette, &Palette::clear_tileset_selection);
+    connect(grid, &Grid::tile_type_changed, tilemap, &Tilemap::selected_type_changed);
+    connect(grid, &Grid::tile_type_selection_cleared, tilemap, &Tilemap::clear_selected_type);
+    connect(grid, &Grid::tile_type_removed, tilemap, &Tilemap::removed_type);
+
     auto* save_action = new QAction("Save", tool_bar);
     save_action->setShortcut(QKeySequence("Ctrl + S"));
     tool_bar->addAction(save_action);
