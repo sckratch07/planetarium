@@ -5,6 +5,7 @@
 #include <grid.hpp>
 #include <palette.hpp>
 #include <tilemap.hpp>
+#include <layer_panel.hpp>
 
 #include <QSettings>
 #include <QDockWidget>
@@ -20,11 +21,11 @@ MainWindow::MainWindow(QWidget* parent) :
     addToolBar(tool_bar);
     
     auto* map_preview = new MapPreview(this);
-    auto* map_preview_dock = new QDockWidget("Map Preview", this);
-    map_preview_dock->setObjectName("MapPreviewDock");
-    map_preview_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    map_preview_dock->setWidget(map_preview);
-    setCentralWidget(map_preview_dock);
+    // auto* map_preview_dock = new QDockWidget("Map Preview", this);
+    // map_preview_dock->setObjectName("MapPreviewDock");
+    // map_preview_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    // map_preview_dock->setWidget(map_preview);
+    setCentralWidget(map_preview);
     
     auto* grid = new Grid(this);
     auto* grid_dock = new QDockWidget("Grid", this);
@@ -38,10 +39,17 @@ MainWindow::MainWindow(QWidget* parent) :
     palette_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
     palette_dock->setWidget(palette);
 
+    auto* layer_panel = new LayerPanel(this);
+    auto* layer_panel_dock = new QDockWidget("Layers", this);
+    layer_panel_dock->setObjectName("LayerPanelDock");
+    layer_panel_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    layer_panel_dock->setWidget(layer_panel);
+
     auto* tilemap = new Tilemap(this);
     
     addDockWidget(Qt::LeftDockWidgetArea, grid_dock);
-    addDockWidget(Qt::LeftDockWidgetArea, map_preview_dock);
+    addDockWidget(Qt::LeftDockWidgetArea, layer_panel_dock);
+    //addDockWidget(Qt::LeftDockWidgetArea, map_preview_dock);
     addDockWidget(Qt::RightDockWidgetArea, palette_dock);
 
     QSettings settings("Game Academy", "Planetarium");
@@ -74,6 +82,11 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(grid, &Grid::tile_type_changed, tilemap, &Tilemap::selected_type_changed);
     connect(grid, &Grid::tile_type_selection_cleared, tilemap, &Tilemap::clear_selected_type);
     connect(grid, &Grid::tile_type_removed, tilemap, &Tilemap::removed_type);
+
+    connect(layer_panel, &LayerPanel::layer_added, tilemap, &Tilemap::layer_added);
+    connect(layer_panel, &LayerPanel::layer_removed, tilemap, &Tilemap::layer_removed);
+    connect(layer_panel, &LayerPanel::layer_selected, tilemap, &Tilemap::layer_selected);
+    connect(layer_panel, &LayerPanel::layer_visibility_changed, tilemap, &Tilemap::layer_visibility_changed);
 
     auto* save_action = new QAction("Save", tool_bar);
     save_action->setShortcut(QKeySequence("Ctrl + S"));

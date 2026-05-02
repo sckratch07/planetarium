@@ -154,9 +154,8 @@ Grid::Grid(QWidget* parent) :
             auto* item = selected[0];
             QString removed_type = item->text();
 
-            bool blocked = m_type_list->blockSignals(true);
+            m_type_list->takeItem(m_type_list->row(item));
             delete item;
-            m_type_list->blockSignals(blocked);
 
             m_selected_type.clear();
             emit tile_type_selection_cleared();

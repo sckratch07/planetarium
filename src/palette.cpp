@@ -18,7 +18,7 @@ Palette::Palette(QWidget* parent) :
     settings.beginGroup("palette");
     restoreGeometry(settings.value("geometry").toByteArray());
     settings.endGroup();
-
+    
     auto* load_button = new QPushButton("Add Tileset", this);
     load_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 

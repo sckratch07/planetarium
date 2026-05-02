@@ -27,6 +27,11 @@ public slots:
     void clear_selected_type();
     void removed_type(const QString& type);
 
+    void layer_added(const QString& name);
+    void layer_removed(const QString& name);
+    void layer_selected(const QString& name);
+    void layer_visibility_changed(const QString& name, bool visible);
+
     void save();
     
 private:
@@ -37,7 +42,19 @@ private:
         std::string type = "None";
     };
 
-    std::vector<Tile> m_tiles;
+    struct Layer
+    {
+        std::string name;
+        bool visible = true;
+        std::vector<Tile> tiles;
+    };
+
+    Layer& active_layer();
+    const Layer& active_layer() const;
+
+    std::vector<Layer> m_layers;
+    int m_active_layer_index;
+
     std::unique_ptr<sf::Texture> m_texture;
 
     sf::Vector2i m_grid_size;
