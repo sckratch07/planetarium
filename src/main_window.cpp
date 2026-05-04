@@ -21,10 +21,6 @@ MainWindow::MainWindow(QWidget* parent) :
     addToolBar(tool_bar);
     
     auto* map_preview = new MapPreview(this);
-    // auto* map_preview_dock = new QDockWidget("Map Preview", this);
-    // map_preview_dock->setObjectName("MapPreviewDock");
-    // map_preview_dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    // map_preview_dock->setWidget(map_preview);
     setCentralWidget(map_preview);
     
     auto* grid = new Grid(this);
@@ -49,13 +45,11 @@ MainWindow::MainWindow(QWidget* parent) :
     
     addDockWidget(Qt::LeftDockWidgetArea, grid_dock);
     addDockWidget(Qt::LeftDockWidgetArea, layer_panel_dock);
-    //addDockWidget(Qt::LeftDockWidgetArea, map_preview_dock);
     addDockWidget(Qt::RightDockWidgetArea, palette_dock);
 
     QSettings settings("Game Academy", "Planetarium");
     settings.beginGroup("main_window");
     restoreGeometry(settings.value("geometry").toByteArray());
-    restoreState(settings.value("state").toByteArray());
     settings.endGroup();
 
     SfmlWindow* sfml_window = &map_preview->sfml_window();
@@ -104,6 +98,5 @@ MainWindow::~MainWindow()
 
     settings.beginGroup("main_window");
     settings.setValue("geometry", saveGeometry());
-    settings.setValue("state", saveState());
     settings.endGroup();
 }

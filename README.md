@@ -7,6 +7,7 @@ Planetarium est une application intuitive pour créer et éditer des cartes 2D �
 - **Édition de cartes en grille** : Créez des cartes en plaçant des tuiles sur une grille flexible.
 - **Palette de tuiles** : Sélectionnez parmi une variété de tuiles pour personnaliser vos créations.
 - **Gestion des couches** : Organisez votre carte en plusieurs couches pour une meilleure structure.
+- **Ajouter des tags** : Personnalisez vos tuiles avec des tags.
 - **Aperçu en temps réel** : Visualisez instantanément les changements apportés à votre carte.
 
 ## Utilisation
@@ -14,10 +15,15 @@ Planetarium est une application intuitive pour créer et éditer des cartes 2D �
 Une fois l'application lancée :
 
 1. **Choisir une tuile** : Cliquez sur une tuile dans la palette pour la sélectionner.
+    ![Palette](resources/palette.png)
 2. **Placer des tuiles** : Cliquez sur la grille de la carte pour placer la tuile sélectionnée à l'emplacement souhaité.
+    ![Map Preview](resources/map_preview.png)
 3. **Gérer les couches** : Utilisez le panneau des couches pour activer, désactiver ou réorganiser les couches de votre carte.
-4. **Aperçu** : Observez les modifications en temps réel dans la fenêtre d'aperçu.
-5. **Changer de thème** : Basculez entre les thèmes clair et sombre via les options de l'application pour une meilleure visibilité.
+    ![Layer](resources/layer.png)
+4. **Ajouter des tags** : Ajoutez des tags à vos tuiles pour spécifier leurs fonctionnements.
+    ![Platform Selector](resources/platform_selector.png)
+    ![Platform Preview](resources/platform_preview.png)
+5. **Aperçu** : Observez les modifications en temps réel dans la fenêtre d'aperçu.
 
 Planetarium est conçu pour être simple d'utilisation, permettant une création rapide et créative de cartes 2D.
 
