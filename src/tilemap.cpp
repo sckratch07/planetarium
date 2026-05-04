@@ -257,7 +257,7 @@ void Tilemap::save()
         }
 
         std::ofstream file(path_str);
-        file << data;
+        file << data.dump(4);
         file.close();
     }
 }
