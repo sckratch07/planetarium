@@ -16,9 +16,9 @@ public:
 
 signals:
     void layer_added(const QString& name);
-    void layer_removed(const QString& name);
-    void layer_selected(const QString& name);
-    void layer_visibility_changed(const QString& name, bool visible);
+    void layer_removed(int index);
+    void layer_selected(int index);
+    void layer_visibility_changed(int index, bool visible);
 
 private slots:
     void add_layer();

@@ -185,54 +185,33 @@ void Tilemap::layer_added(const QString& name)
     m_active_layer_index = static_cast<int>(m_layers.size()) - 1;
 }
 
-void Tilemap::layer_removed(const QString& name)
+void Tilemap::layer_removed(int index)
 {
-    const std::string layer_name = name.toStdString();
-    auto removed = std::remove_if(m_layers.begin(), m_layers.end(), [&](const Layer& layer)
-    {
-        return layer.name == layer_name;
-    });
+    if (index < 0 || index >= static_cast<int>(m_layers.size())) return;
 
-    if (removed == m_layers.end()) return;
-
-    int removed_index = static_cast<int>(std::distance(m_layers.begin(), removed));
-    m_layers.erase(removed, m_layers.end());
+    m_layers.erase(m_layers.begin() + index);
 
     if (m_layers.empty())
     {
         m_layers.push_back({"Layer 1", true, {}});
         m_active_layer_index = 0;
     }
-    else if (m_active_layer_index >= static_cast<int>(m_layers.size()) || m_active_layer_index == removed_index)
+    else if (m_active_layer_index >= static_cast<int>(m_layers.size()) || m_active_layer_index == index)
     {
         m_active_layer_index = static_cast<int>(m_layers.size()) - 1;
     }
 }
 
-void Tilemap::layer_selected(const QString& name)
+void Tilemap::layer_selected(int index)
 {
-    const std::string layer_name = name.toStdString();
-    for (int index = 0; index < static_cast<int>(m_layers.size()); ++index)
-    {
-        if (m_layers[index].name == layer_name)
-        {
-            m_active_layer_index = index;
-            break;
-        }
-    }
+    if (index < 0 || index >= static_cast<int>(m_layers.size())) return;
+    m_active_layer_index = index;
 }
 
-void Tilemap::layer_visibility_changed(const QString& name, bool visible)
+void Tilemap::layer_visibility_changed(int index, bool visible)
 {
-    const std::string layer_name = name.toStdString();
-    for (auto& layer : m_layers)
-    {
-        if (layer.name == layer_name)
-        {
-            layer.visible = visible;
-            break;
-        }
-    }
+    if (index < 0 || index >= static_cast<int>(m_layers.size())) return;
+    m_layers[index].visible = visible;
 }
 
 void Tilemap::save()
@@ -259,8 +238,9 @@ void Tilemap::save()
         }
 
         data["tiles"] = nlohmann::json::array();
-        for (const auto& layer : m_layers)
+        for (int layer_index = 0; layer_index < static_cast<int>(m_layers.size()); ++layer_index)
         {
+            const auto& layer = m_layers[layer_index];
             for (const auto& tile : layer.tiles)
             {
                 nlohmann::json t;
@@ -271,7 +251,7 @@ void Tilemap::save()
                 t["rect_width"] = tile.rect.size.x;
                 t["rect_height"] = tile.rect.size.y;
                 t["type"] = tile.type;
-                t["layer"] = layer.name;
+                t["layer"] = layer_index;
                 data["tiles"].push_back(t);
             }
         }

@@ -49,7 +49,7 @@ void LayerPanel::create_default_layer()
     m_layer_list->setCurrentItem(item);
     m_ignore_item_changes = false;
     emit layer_added(item->text());
-    emit layer_selected(item->text());
+    emit layer_selected(0);
 }
 
 void LayerPanel::add_layer()
@@ -72,10 +72,11 @@ void LayerPanel::add_layer()
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
     item->setCheckState(Qt::Checked);
     m_layer_list->setCurrentItem(item);
+    int row = m_layer_list->row(item);
     m_ignore_item_changes = false;
 
     emit layer_added(item->text());
-    emit layer_selected(item->text());
+    emit layer_selected(row);
 }
 
 void LayerPanel::remove_selected_layer()
@@ -86,26 +87,28 @@ void LayerPanel::remove_selected_layer()
     if (selected.isEmpty()) return;
 
     auto* item = selected[0];
-    QString removed_name = item->text();
-
     int row = m_layer_list->row(item);
     delete m_layer_list->takeItem(row);
 
     ensure_single_item_selection();
-    emit layer_removed(removed_name);
+    emit layer_removed(row);
 }
 
 void LayerPanel::on_layer_item_changed(QListWidgetItem* item)
 {
     if (m_ignore_item_changes || !item) return;
-    emit layer_visibility_changed(item->text(), item->checkState() == Qt::Checked);
+    int row = m_layer_list->row(item);
+    if (row < 0) return;
+    emit layer_visibility_changed(row, item->checkState() == Qt::Checked);
 }
 
 void LayerPanel::on_selection_changed()
 {
     const auto selected = m_layer_list->selectedItems();
     if (selected.isEmpty()) return;
-    emit layer_selected(selected[0]->text());
+    int row = m_layer_list->row(selected[0]);
+    if (row < 0) return;
+    emit layer_selected(row);
 }
 
 void LayerPanel::ensure_single_item_selection()
