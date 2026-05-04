@@ -44,8 +44,8 @@ Palette::Palette(QWidget* parent) :
                 m_tree_view->addItem(item);
                 item->setSelected(true);
 
-                scene->clear();
                 m_view.reset_rect();
+                scene->clear();
                 scene->addPixmap(pixmap);
                 scene->setSceneRect(pixmap.rect());
 
@@ -59,6 +59,8 @@ Palette::Palette(QWidget* parent) :
             const auto selected = m_tree_view->selectedItems();
             if (selected.isEmpty())
             {
+                scene->clear();
+                m_view.reset_rect();
                 emit tileset_selected(false);
                 return;
             }
@@ -69,8 +71,8 @@ Palette::Palette(QWidget* parent) :
             QPixmap pixmap(path.c_str());
             if (pixmap.isNull()) return;
 
-            scene->clear();
             m_view.reset_rect();
+            scene->clear();
             scene->addPixmap(pixmap);
             scene->setSceneRect(pixmap.rect());
 
