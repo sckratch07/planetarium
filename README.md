@@ -1,31 +1,28 @@
 # Planetarium
 
-`Planetarium` est le dépôt du projet de fin d'année de Owenn Squilbin, une application nommée `Planetarium`.
+Planetarium est une application intuitive pour créer et éditer des cartes 2D à l'aide de tuiles. Idéale pour les développeurs de jeux, les artistes numériques ou quiconque souhaite concevoir des environnements en 2D de manière simple et efficace.
 
-Planetarium a été réalisée par Owenn Squilbin, étudiant en deuxième année à Game Academy (2025 - 2026), dans le cadre de son projet de fin d'année intitulé `Lock Loop`.
+## Fonctionnalités
 
-## Qu'est-ce que c'est ?
+- **Édition de cartes en grille** : Créez des cartes en plaçant des tuiles sur une grille flexible.
+- **Palette de tuiles** : Sélectionnez parmi une variété de tuiles pour personnaliser vos créations.
+- **Gestion des couches** : Organisez votre carte en plusieurs couches pour une meilleure structure.
+- **Aperçu en temps réel** : Visualisez instantanément les changements apportés à votre carte.
 
-C'est un projet C++/Qt qui permet de créer, afficher et manipuler des tuiles sur une grille. L'application fournit un aperçu de la carte, une palette de tuiles, et des outils pour dessiner et assembler un environnement en 2D.
+## Utilisation
 
-## Ce que l'application permet de faire
+Une fois l'application lancée :
 
-- Visualiser une carte en mode grille.
-- Sélectionner et appliquer des tuiles depuis une palette.
-- Éditer des couches de carte.
-- Voir un aperçu en temps réel des modifications apportées.
-- Gérer l'apparence via un thème clair/sombre.
+1. **Choisir une tuile** : Cliquez sur une tuile dans la palette pour la sélectionner.
+2. **Placer des tuiles** : Cliquez sur la grille de la carte pour placer la tuile sélectionnée à l'emplacement souhaité.
+3. **Gérer les couches** : Utilisez le panneau des couches pour activer, désactiver ou réorganiser les couches de votre carte.
+4. **Aperçu** : Observez les modifications en temps réel dans la fenêtre d'aperçu.
+5. **Changer de thème** : Basculez entre les thèmes clair et sombre via les options de l'application pour une meilleure visibilité.
 
-## Comment l'utiliser
+Planetarium est conçu pour être simple d'utilisation, permettant une création rapide et créative de cartes 2D.
 
-1. Ouvrez le projet dans un environnement compatible CMake (par exemple avec Visual Studio, Qt Creator, ou CMake Tools).
-2. Configurez et générez le projet en utilisant les presets disponibles (`windows-debug`, `windows-release`).
-3. Lancez l'exécutable produit.
-4. Dans l'application :
-   - Utilisez la palette pour choisir une tuile.
-   - Cliquez sur la grille de la carte pour placer la tuile sélectionnée.
-   - Activez ou désactivez les couches selon vos besoins.
-   - Basculez entre les thèmes clair et sombre si l'option est disponible.
+## À propos
 
-> Note : ce README est un point de départ. Ajoutez des captures d'écran, des exemples d'utilisation et des détails sur les dépendances spécifiques si nécessaire.
+Planetarium a été développé par Owenn Squilbin, étudiant en deuxième année à Game Academy (2025 - 2026), dans le cadre de son projet de fin d'année intitulé "Lock Loop".
 
+Ce projet fait partie du dépôt `planetarium` sur GitHub.
