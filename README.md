@@ -30,3 +30,7 @@ Planetarium est conçu pour être simple d'utilisation, permettant une création
 Planetarium a été développé par Owenn Squilbin, étudiant en deuxième année à Game Academy (2025 - 2026), dans le cadre de son projet de fin d'année intitulé "Lock Loop".
 
 Ce projet fait partie du dépôt `planetarium` sur GitHub.
+
+## Crédits
+
+- Tilesets : pulkitverma ([Itch.io Tilesets](https://pulkitverma.itch.io/free-tileset-pack))
