@@ -9,7 +9,7 @@
 #include <fstream>
 
 Tilemap::Tilemap(QObject* parent) :
-    QObject(parent), m_active_layer_index(0), m_selected_rect(nullptr), m_texture(nullptr)
+    QObject(parent), m_active_layer_index(0), m_selected_type(""), m_selected_rect(nullptr), m_texture(nullptr)
 {
     m_layers.push_back({"Layer 1", true, {}});
 }
@@ -33,6 +33,8 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
     if (!event) return;
 
     sf::Vector2f mouse_pos = target.mapPixelToCoords(sf::Mouse::getPosition(target));
+    if (target.getView().getViewport().contains(mouse_pos)) return;
+
     sf::Vector2i grid_pos(
         static_cast<int>(mouse_pos.x) / m_cell_size.x,
         static_cast<int>(mouse_pos.y) / m_cell_size.y
@@ -73,7 +75,7 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
     }
     else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
     {
-        if (!m_selected_type.empty())
+        if (m_selected_type.empty())
         {
             std::erase_if(layer.tiles, [&](const Tile& tile)
             {
@@ -82,7 +84,7 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
         }
         else if (existing != layer.tiles.end())
         {
-            existing->type = m_selected_type;
+            existing->type = "None";
         }
     }
 }
