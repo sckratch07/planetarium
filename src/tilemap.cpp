@@ -10,7 +10,8 @@
 
 Tilemap::Tilemap(QObject* parent) :
     QObject(parent), m_active_layer_index(0), m_selected_type(""), m_selected_rect(nullptr), m_texture(nullptr),
-    m_selected_rect_width_tiles(1), m_selected_rect_height_tiles(1)
+    m_selected_rect_width_tiles(1), m_selected_rect_height_tiles(1),
+    m_preview_position(-1, -1), m_has_preview(false)
 {
     m_layers.push_back({"Layer 1", true, {}});
 }
@@ -34,8 +35,6 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
     if (!event) return;
 
     sf::Vector2f mouse_pos = target.mapPixelToCoords(sf::Mouse::getPosition(target));
-    if (target.getView().getViewport().contains(mouse_pos)) return;
-
     sf::Vector2i grid_pos(
         static_cast<int>(mouse_pos.x) / m_cell_size.x,
         static_cast<int>(mouse_pos.y) / m_cell_size.y
@@ -43,7 +42,13 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
 
     if (grid_pos.x < 0 || grid_pos.y < 0 ||
         grid_pos.x >= m_grid_size.x || grid_pos.y >= m_grid_size.y)
+    {
+        m_has_preview = false;
         return;
+    }
+
+    m_preview_position = grid_pos;
+    m_has_preview = true;
 
     auto& layer = active_layer();
     auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
@@ -153,6 +158,50 @@ void Tilemap::draw(sf::RenderWindow& target)
                 highlight.setOutlineThickness(1.f);
                 target.draw(highlight);
             }
+        }
+    }
+
+    if (m_has_preview && m_texture)
+    {
+        if (m_selected_rect)
+        {
+            QRectF rect = m_selected_rect->rect();
+            int tile_size_x = static_cast<int>(rect.width()) / m_selected_rect_width_tiles;
+            int tile_size_y = static_cast<int>(rect.height()) / m_selected_rect_height_tiles;
+            sf::RectangleShape preview_shape(m_cell_size);
+            preview_shape.setTexture(m_texture.get());
+            preview_shape.setFillColor(sf::Color(255, 255, 255, 160));
+            preview_shape.setOutlineColor(sf::Color(0, 200, 255, 180));
+            preview_shape.setOutlineThickness(1.f);
+
+            for (int dy = 0; dy < m_selected_rect_height_tiles; ++dy)
+            {
+                for (int dx = 0; dx < m_selected_rect_width_tiles; ++dx)
+                {
+                    int tile_x = m_preview_position.x + dx;
+                    int tile_y = m_preview_position.y + dy;
+                    if (tile_x < 0 || tile_y < 0 || tile_x >= m_grid_size.x || tile_y >= m_grid_size.y)
+                        continue;
+
+                    preview_shape.setPosition({ tile_x * m_cell_size.x,
+                                                tile_y * m_cell_size.y });
+                    preview_shape.setTextureRect(sf::IntRect(
+                        { static_cast<int>(rect.x()) + dx * tile_size_x,
+                        static_cast<int>(rect.y()) + dy * tile_size_y },
+                        { tile_size_x, tile_size_y }
+                    ));
+                    target.draw(preview_shape);
+                }
+            }
+        }
+        else if (!m_selected_type.empty())
+        {
+            sf::RectangleShape preview_shape(m_cell_size);
+            preview_shape.setPosition({ m_preview_position.x * m_cell_size.x, m_preview_position.y * m_cell_size.y });
+            preview_shape.setFillColor(sf::Color(0, 255, 0, 64));
+            preview_shape.setOutlineColor(sf::Color(0, 255, 0, 128));
+            preview_shape.setOutlineThickness(1.f);
+            target.draw(preview_shape);
         }
     }
 }

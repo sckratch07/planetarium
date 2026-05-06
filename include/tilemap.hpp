@@ -6,6 +6,8 @@
 #include <QStringList>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Texture.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <optional>
 #include <vector>
 #include <QList>
 
@@ -76,6 +78,9 @@ private:
     std::string m_selected_type;
     int m_selected_rect_width_tiles;
     int m_selected_rect_height_tiles;
+
+    sf::Vector2i m_preview_position;
+    bool m_has_preview;
 };
 
 #endif
