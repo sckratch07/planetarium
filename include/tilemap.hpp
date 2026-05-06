@@ -23,6 +23,7 @@ public slots:
     void cell_size_changed(const sf::Vector2i& new_size);
     void texture_changed(const std::string path);
     void selected_rect_changed(QGraphicsRectItem* rect);
+    void selected_rect_dimensions_changed(int width_tiles, int height_tiles);
     void selected_type_changed(const QString& type);
     void clear_selected_type();
     void removed_type(const QString& type);
@@ -61,6 +62,8 @@ private:
     sf::Vector2f m_cell_size;
     QGraphicsRectItem* m_selected_rect;
     std::string m_selected_type;
+    int m_selected_rect_width_tiles;
+    int m_selected_rect_height_tiles;
 };
 
 #endif

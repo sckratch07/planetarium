@@ -65,6 +65,7 @@ MainWindow::MainWindow(QWidget* parent) :
 
     connect(palette, &Palette::texture_changed, tilemap, &Tilemap::texture_changed);
     connect(palette->view(), &TilesetView::selected_rect_changed, tilemap, &Tilemap::selected_rect_changed);
+    connect(palette->view(), &TilesetView::selected_rect_dimensions_changed, tilemap, &Tilemap::selected_rect_dimensions_changed);
     connect(palette->view(), &TilesetView::selected_rect_changed, grid, [grid](QGraphicsRectItem* rect)
         {
             if (rect) grid->clear_type_selection();

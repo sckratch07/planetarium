@@ -9,7 +9,8 @@
 #include <fstream>
 
 Tilemap::Tilemap(QObject* parent) :
-    QObject(parent), m_active_layer_index(0), m_selected_type(""), m_selected_rect(nullptr), m_texture(nullptr)
+    QObject(parent), m_active_layer_index(0), m_selected_type(""), m_selected_rect(nullptr), m_texture(nullptr),
+    m_selected_rect_width_tiles(1), m_selected_rect_height_tiles(1)
 {
     m_layers.push_back({"Layer 1", true, {}});
 }
@@ -59,19 +60,44 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
             return;
         }
 
-        if (existing != layer.tiles.end()) return;
         if (!m_selected_rect) return;
 
         QRectF rect = m_selected_rect->rect();
+        int tile_size_x = static_cast<int>(rect.width()) / m_selected_rect_width_tiles;
+        int tile_size_y = static_cast<int>(rect.height()) / m_selected_rect_height_tiles;
+        int rect_start_x = static_cast<int>(rect.x());
+        int rect_start_y = static_cast<int>(rect.y());
 
-        layer.tiles.push_back({
-            grid_pos,
-            sf::IntRect(
-                { static_cast<int>(rect.x()), static_cast<int>(rect.y()) },
-                { static_cast<int>(rect.width()), static_cast<int>(rect.height()) }
-            ),
-            m_selected_type
-        });
+        // Place a block of tiles
+        for (int dy = 0; dy < m_selected_rect_height_tiles; ++dy)
+        {
+            for (int dx = 0; dx < m_selected_rect_width_tiles; ++dx)
+            {
+                sf::Vector2i tile_pos(grid_pos.x + dx, grid_pos.y + dy);
+
+                // Check bounds
+                if (tile_pos.x < 0 || tile_pos.y < 0 ||
+                    tile_pos.x >= m_grid_size.x || tile_pos.y >= m_grid_size.y)
+                    continue;
+
+                // Check if tile already exists
+                auto existing_tile = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
+                {
+                    return tile.pos == tile_pos;
+                });
+
+                if (existing_tile != layer.tiles.end()) continue;
+
+                layer.tiles.push_back({
+                    tile_pos,
+                    sf::IntRect(
+                        { rect_start_x + dx * tile_size_x, rect_start_y + dy * tile_size_y },
+                        { tile_size_x, tile_size_y }
+                    ),
+                    m_selected_type
+                });
+            }
+        }
     }
     else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
     {
@@ -151,6 +177,12 @@ void Tilemap::texture_changed(const std::string path)
 void Tilemap::selected_rect_changed(QGraphicsRectItem* rect)
 {
     m_selected_rect = rect;
+}
+
+void Tilemap::selected_rect_dimensions_changed(int width_tiles, int height_tiles)
+{
+    m_selected_rect_width_tiles = width_tiles;
+    m_selected_rect_height_tiles = height_tiles;
 }
 
 void Tilemap::selected_type_changed(const QString& type)

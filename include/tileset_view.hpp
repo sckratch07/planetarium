@@ -17,14 +17,23 @@ public slots:
 
 signals:
     void selected_rect_changed(QGraphicsRectItem* rect);
+    void selected_rect_dimensions_changed(int width_tiles, int height_tiles);
 
 protected:
     void wheelEvent(QWheelEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void mouseMoveEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
     QGraphicsRectItem* m_selection_rect;
     sf::Vector2f m_tile_size;
+    bool m_is_dragging;
+    QPointF m_drag_start;
+    int m_start_tile_x;
+    int m_start_tile_y;
+    int m_selected_width_tiles;
+    int m_selected_height_tiles;
 };
 
 #endif

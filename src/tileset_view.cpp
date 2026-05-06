@@ -2,9 +2,12 @@
 
 #include <QGraphicsRectItem>
 #include <QWheelEvent>
+#include <algorithm>
 
 TilesetView::TilesetView(QWidget* parent) :
-    QGraphicsView(parent), m_selection_rect(nullptr), m_tile_size({32, 32})
+    QGraphicsView(parent), m_selection_rect(nullptr), m_tile_size({32, 32}),
+    m_is_dragging(false), m_drag_start({0, 0}), m_start_tile_x(0), m_start_tile_y(0),
+    m_selected_width_tiles(1), m_selected_height_tiles(1)
 {
 
 }
@@ -43,23 +46,52 @@ void TilesetView::mousePressEvent(QMouseEvent* event)
     if (!scene()) return;
 
     QPointF scenePos = mapToScene(event->pos());
-    int tileX = static_cast<int>(scenePos.x()) / m_tile_size.x;
-    int tileY = static_cast<int>(scenePos.y()) / m_tile_size.y;
+    m_start_tile_x = static_cast<int>(scenePos.x()) / m_tile_size.x;
+    m_start_tile_y = static_cast<int>(scenePos.y()) / m_tile_size.y;
+    m_drag_start = scenePos;
+    m_is_dragging = true;
+}
 
-    int x = tileX * m_tile_size.x;
-    int y = tileY * m_tile_size.y;
+void TilesetView::mouseMoveEvent(QMouseEvent* event)
+{
+    if (!m_is_dragging || !scene()) return;
+
+    QPointF scenePos = mapToScene(event->pos());
+    int current_tile_x = static_cast<int>(scenePos.x()) / m_tile_size.x;
+    int current_tile_y = static_cast<int>(scenePos.y()) / m_tile_size.y;
+
+    // Ensure we have valid tile coordinates
+    int min_x = std::min(m_start_tile_x, current_tile_x);
+    int min_y = std::min(m_start_tile_y, current_tile_y);
+    int max_x = std::max(m_start_tile_x, current_tile_x);
+    int max_y = std::max(m_start_tile_y, current_tile_y);
+
+    // Calculate tile dimensions
+    m_selected_width_tiles = max_x - min_x + 1;
+    m_selected_height_tiles = max_y - min_y + 1;
+
+    int x = min_x * m_tile_size.x;
+    int y = min_y * m_tile_size.y;
+    int width = m_selected_width_tiles * m_tile_size.x;
+    int height = m_selected_height_tiles * m_tile_size.y;
 
     if (!m_selection_rect)
     {
         m_selection_rect = scene()->addRect(
-            x, y,
-            m_tile_size.x, m_tile_size.y,
+            x, y, width, height,
             QPen(Qt::red, 2)
         );
         emit selected_rect_changed(m_selection_rect);
+        emit selected_rect_dimensions_changed(m_selected_width_tiles, m_selected_height_tiles);
     }
     else
     {
-        m_selection_rect->setRect(x, y, m_tile_size.x, m_tile_size.y);
+        m_selection_rect->setRect(x, y, width, height);
+        emit selected_rect_dimensions_changed(m_selected_width_tiles, m_selected_height_tiles);
     }
+}
+
+void TilesetView::mouseReleaseEvent(QMouseEvent* event)
+{
+    m_is_dragging = false;
 }
