@@ -1,5 +1,6 @@
 #include <layer_panel.hpp>
 
+#include <QAbstractItemModel>
 #include <QBoxLayout>
 #include <QDialog>
 #include <QFileDialog>
@@ -15,7 +16,10 @@ LayerPanel::LayerPanel(QWidget* parent) : QWidget(parent), m_ignore_item_changes
     m_layer_list->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
     m_layer_list->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     m_layer_list->setAlternatingRowColors(true);
-    m_layer_list->setDragDropMode(QAbstractItemView::NoDragDrop);
+    m_layer_list->setDragDropMode(QAbstractItemView::InternalMove);
+    m_layer_list->setDragEnabled(true);
+    m_layer_list->setAcceptDrops(true);
+    m_layer_list->setDefaultDropAction(Qt::MoveAction);
 
     m_add_layer_button = new QPushButton("Add Layer", this);
     m_remove_layer_button = new QPushButton("Remove Layer", this);
@@ -32,6 +36,7 @@ LayerPanel::LayerPanel(QWidget* parent) : QWidget(parent), m_ignore_item_changes
     connect(m_remove_layer_button, &QPushButton::pressed, this, &LayerPanel::remove_selected_layer);
     connect(m_layer_list, &QListWidget::itemChanged, this, &LayerPanel::on_layer_item_changed);
     connect(m_layer_list, &QListWidget::itemSelectionChanged, this, &LayerPanel::on_selection_changed);
+    connect(m_layer_list->model(), &QAbstractItemModel::rowsMoved, this, &LayerPanel::on_rows_moved);
 
     create_default_layer();
 }
@@ -94,6 +99,21 @@ void LayerPanel::remove_selected_layer()
     emit layer_removed(row);
 }
 
+void LayerPanel::on_rows_moved(const QModelIndex& parent, int start, int end, const QModelIndex& destination, int row)
+{
+    if (m_ignore_item_changes) return;
+    if (parent.isValid() || destination.isValid()) return;
+    if (start != end) return;
+
+    int from = start;
+    int to = row;
+    if (from < to)
+        to -= 1;
+
+    if (from == to) return;
+    emit layer_moved(from, to);
+}
+
 void LayerPanel::on_layer_item_changed(QListWidgetItem* item)
 {
     if (m_ignore_item_changes || !item) return;
@@ -115,4 +135,28 @@ void LayerPanel::ensure_single_item_selection()
 {
     if (m_layer_list->selectedItems().isEmpty() && m_layer_list->count() > 0)
         m_layer_list->setCurrentRow(0);
+}
+
+void LayerPanel::set_layers(const QStringList& names, const QList<bool>& visibility, int selected_index)
+{
+    m_ignore_item_changes = true;
+    bool blocked = m_layer_list->blockSignals(true);
+    m_layer_list->clear();
+
+    int count = qMin(names.size(), visibility.size());
+    for (int i = 0; i < count; ++i)
+    {
+        auto* item = new QListWidgetItem(names[i], m_layer_list);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        item->setCheckState(visibility[i] ? Qt::Checked : Qt::Unchecked);
+    }
+
+    if (selected_index < 0 || selected_index >= m_layer_list->count())
+        selected_index = 0;
+
+    if (m_layer_list->count() > 0)
+        m_layer_list->setCurrentRow(selected_index);
+
+    m_layer_list->blockSignals(blocked);
+    m_ignore_item_changes = false;
 }

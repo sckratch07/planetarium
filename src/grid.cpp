@@ -48,6 +48,9 @@ Grid::Grid(QWidget* parent) :
     grid_size_height->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     grid_height_layout->addWidget(grid_size_height);
 
+    m_grid_size_width = grid_size_width;
+    m_grid_size_height = grid_size_height;
+
     auto* cell_width_layout = new QHBoxLayout();
 
     auto* label_cell_width = new QLabel("Cell width: ", this);
@@ -60,6 +63,8 @@ Grid::Grid(QWidget* parent) :
     cell_size_width->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     cell_width_layout->addWidget(cell_size_width);
 
+    m_cell_size_width = cell_size_width;
+
     auto* cell_height_layout = new QHBoxLayout();
 
     auto* label_cell_height = new QLabel("Cell height: ", this);
@@ -71,6 +76,8 @@ Grid::Grid(QWidget* parent) :
     cell_size_height->setValue(m_cell_size.y);
     cell_size_height->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     cell_height_layout->addWidget(cell_size_height);
+
+    m_cell_size_height = cell_size_height;
 
     auto* add_type_button = new QPushButton("Add Type", this);
     add_type_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -142,6 +149,7 @@ Grid::Grid(QWidget* parent) :
             auto* item = new QListWidgetItem(name_edit->text(), m_type_list);
             m_type_list->addItem(item);
             item->setSelected(true);
+            emit tile_type_added(item->text());
             dialog->close();
         }
     );
@@ -178,6 +186,43 @@ Grid::Grid(QWidget* parent) :
             emit tile_type_changed(m_selected_type);
         }
     );
+}
+
+void Grid::set_grid_size(const sf::Vector2i& new_size)
+{
+    bool blocked_w = m_grid_size_width->blockSignals(true);
+    bool blocked_h = m_grid_size_height->blockSignals(true);
+    m_grid_size = new_size;
+    m_grid_size_width->setValue(new_size.x);
+    m_grid_size_height->setValue(new_size.y);
+    m_grid_size_width->blockSignals(blocked_w);
+    m_grid_size_height->blockSignals(blocked_h);
+    emit grid_size_changed(m_grid_size);
+}
+
+void Grid::set_cell_size(const sf::Vector2i& new_size)
+{
+    bool blocked_w = m_cell_size_width->blockSignals(true);
+    bool blocked_h = m_cell_size_height->blockSignals(true);
+    m_cell_size = new_size;
+    m_cell_size_width->setValue(new_size.x);
+    m_cell_size_height->setValue(new_size.y);
+    m_cell_size_width->blockSignals(blocked_w);
+    m_cell_size_height->blockSignals(blocked_h);
+    emit cell_size_changed(m_cell_size);
+}
+
+void Grid::set_types(const QStringList& types)
+{
+    bool blocked = m_type_list->blockSignals(true);
+    m_type_list->clear();
+    for (const QString& type : types)
+    {
+        auto* item = new QListWidgetItem(type, m_type_list);
+        m_type_list->addItem(item);
+    }
+    m_type_list->blockSignals(blocked);
+    clear_type_selection();
 }
 
 void Grid::clear_type_selection()

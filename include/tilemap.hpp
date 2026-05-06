@@ -3,9 +3,11 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <vector>
+#include <QList>
 
 class QGraphicsRectItem;
 
@@ -26,15 +28,24 @@ public slots:
     void selected_rect_dimensions_changed(int width_tiles, int height_tiles);
     void selected_type_changed(const QString& type);
     void clear_selected_type();
+    void add_type(const QString& type);
     void removed_type(const QString& type);
 
     void layer_added(const QString& name);
     void layer_removed(int index);
     void layer_selected(int index);
     void layer_visibility_changed(int index, bool visible);
+    void layer_moved(int from, int to);
 
     void save();
-    
+    void load();
+
+signals:
+    void grid_size_updated(const sf::Vector2i& new_size);
+    void cell_size_updated(const sf::Vector2i& new_size);
+    void types_loaded(const QStringList& types);
+    void layers_loaded(const QStringList& names, const QList<bool>& visibility, int selected_index);
+
 private:
     struct Tile
     {
@@ -55,6 +66,7 @@ private:
 
     std::vector<Layer> m_layers;
     int m_active_layer_index;
+    QStringList m_types;
 
     std::unique_ptr<sf::Texture> m_texture;
 

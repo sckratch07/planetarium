@@ -33,25 +33,25 @@ void Camera::event(const std::optional<sf::Event>& event, sf::RenderWindow& targ
         }
         else if (key_press->scancode == sf::Keyboard::Scancode::W)
         {
-            center.y -= 10.f;
+            center.y -= 50.f;
             m_view.setCenter(center);
             target.setView(m_view);
         }
         else if (key_press->scancode == sf::Keyboard::Scancode::A)
         {
-            center.x -= 10.f;
+            center.x -= 50.f;
             m_view.setCenter(center);
             target.setView(m_view);
         }
-        else if (key_press->scancode == sf::Keyboard::Scancode::S)
+        else if (key_press->scancode == sf::Keyboard::Scancode::S && !key_press->control)
         {
-            center.y += 10.f;
+            center.y += 50.f;
             m_view.setCenter(center);
             target.setView(m_view);
         }
         else if (key_press->scancode == sf::Keyboard::Scancode::D)
         {
-            center.x += 10.f;
+            center.x += 50.f;
             m_view.setCenter(center);
             target.setView(m_view);
         }

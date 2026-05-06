@@ -6,7 +6,7 @@
 
 TilesetView::TilesetView(QWidget* parent) :
     QGraphicsView(parent), m_selection_rect(nullptr), m_tile_size({32, 32}),
-    m_is_dragging(false), m_drag_start({0, 0}), m_start_tile_x(0), m_start_tile_y(0),
+    m_is_dragging(false), m_actual_drag_started(false), m_drag_start({0, 0}), m_start_tile_x(0), m_start_tile_y(0),
     m_selected_width_tiles(1), m_selected_height_tiles(1)
 {
 
@@ -50,6 +50,7 @@ void TilesetView::mousePressEvent(QMouseEvent* event)
     m_start_tile_y = static_cast<int>(scenePos.y()) / m_tile_size.y;
     m_drag_start = scenePos;
     m_is_dragging = true;
+    m_actual_drag_started = false;
 }
 
 void TilesetView::mouseMoveEvent(QMouseEvent* event)
@@ -57,6 +58,16 @@ void TilesetView::mouseMoveEvent(QMouseEvent* event)
     if (!m_is_dragging || !scene()) return;
 
     QPointF scenePos = mapToScene(event->pos());
+
+    // Check if drag threshold has been exceeded
+    if (!m_actual_drag_started)
+    {
+        QPointF delta = scenePos - m_drag_start;
+        if (std::abs(delta.x()) < DRAG_THRESHOLD && std::abs(delta.y()) < DRAG_THRESHOLD)
+            return; // Haven't moved far enough to start actual dragging
+        m_actual_drag_started = true;
+    }
+
     int current_tile_x = static_cast<int>(scenePos.x()) / m_tile_size.x;
     int current_tile_y = static_cast<int>(scenePos.y()) / m_tile_size.y;
 
@@ -93,5 +104,35 @@ void TilesetView::mouseMoveEvent(QMouseEvent* event)
 
 void TilesetView::mouseReleaseEvent(QMouseEvent* event)
 {
+    if (m_is_dragging && !m_actual_drag_started)
+    {
+        // Simple click without dragging - select single tile
+        QPointF scenePos = mapToScene(event->pos());
+        int tile_x = static_cast<int>(scenePos.x()) / m_tile_size.x;
+        int tile_y = static_cast<int>(scenePos.y()) / m_tile_size.y;
+
+        int x = tile_x * m_tile_size.x;
+        int y = tile_y * m_tile_size.y;
+        int width = m_tile_size.x;
+        int height = m_tile_size.y;
+
+        if (!m_selection_rect)
+        {
+            m_selection_rect = scene()->addRect(
+                x, y, width, height,
+                QPen(Qt::red, 2)
+            );
+            emit selected_rect_changed(m_selection_rect);
+        }
+        else
+        {
+            m_selection_rect->setRect(x, y, width, height);
+        }
+        m_selected_width_tiles = 1;
+        m_selected_height_tiles = 1;
+        emit selected_rect_dimensions_changed(1, 1);
+    }
+
     m_is_dragging = false;
+    m_actual_drag_started = false;
 }

@@ -86,7 +86,15 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
                     return tile.pos == tile_pos;
                 });
 
-                if (existing_tile != layer.tiles.end()) continue;
+                if (existing_tile != layer.tiles.end())
+                {
+                    existing_tile->rect = sf::IntRect(
+                        { rect_start_x + dx * tile_size_x, rect_start_y + dy * tile_size_y },
+                        { tile_size_x, tile_size_y }
+                    );
+                    existing_tile->type = m_selected_type;
+                    continue;
+                }
 
                 layer.tiles.push_back({
                     tile_pos,
@@ -195,6 +203,14 @@ void Tilemap::clear_selected_type()
     m_selected_type.clear();
 }
 
+void Tilemap::add_type(const QString& type)
+{
+    const QString normalized = type.trimmed();
+    if (normalized.isEmpty()) return;
+    if (m_types.contains(normalized)) return;
+    m_types.push_back(normalized);
+}
+
 void Tilemap::removed_type(const QString& type)
 {
     const std::string removed = type.toStdString();
@@ -206,6 +222,7 @@ void Tilemap::removed_type(const QString& type)
                 tile.type.clear();
         }
     }
+    m_types.removeAll(type);
 }
 
 void Tilemap::layer_added(const QString& name)
@@ -246,6 +263,30 @@ void Tilemap::layer_visibility_changed(int index, bool visible)
     m_layers[index].visible = visible;
 }
 
+void Tilemap::layer_moved(int from, int to)
+{
+    if (from < 0 || from >= static_cast<int>(m_layers.size())) return;
+    if (to < 0 || to >= static_cast<int>(m_layers.size())) return;
+    if (from == to) return;
+
+    Layer layer = std::move(m_layers[from]);
+    m_layers.erase(m_layers.begin() + from);
+    m_layers.insert(m_layers.begin() + to, std::move(layer));
+
+    if (m_active_layer_index == from)
+    {
+        m_active_layer_index = to;
+    }
+    else if (from < to && m_active_layer_index > from && m_active_layer_index <= to)
+    {
+        m_active_layer_index -= 1;
+    }
+    else if (from > to && m_active_layer_index >= to && m_active_layer_index < from)
+    {
+        m_active_layer_index += 1;
+    }
+}
+
 void Tilemap::save()
 {
     if (QString path = QFileDialog::getExistingDirectory(nullptr, "Select save folder", ""); !path.isEmpty())
@@ -267,6 +308,12 @@ void Tilemap::save()
             l["name"] = layer.name;
             l["visible"] = layer.visible;
             data["layers"].push_back(l);
+        }
+
+        data["types"] = nlohmann::json::array();
+        for (const auto& type : m_types)
+        {
+            data["types"].push_back(type.toStdString());
         }
 
         data["tiles"] = nlohmann::json::array();
@@ -291,5 +338,120 @@ void Tilemap::save()
         std::ofstream file(path_str);
         file << data.dump(4);
         file.close();
+    }
+}
+
+void Tilemap::load()
+{
+    if (QString file_path = QFileDialog::getOpenFileName(nullptr, "Load project", "", "JSON Files (*.json)"); !file_path.isEmpty())
+    {
+        std::ifstream file(file_path.toStdString());
+        if (!file.is_open()) return;
+
+        try
+        {
+            nlohmann::json data = nlohmann::json::parse(file);
+            file.close();
+
+            // Restore grid and cell sizes
+            if (data.contains("map_size_x") && data.contains("map_size_y"))
+            {
+                m_grid_size.x = data["map_size_x"].get<int>();
+                m_grid_size.y = data["map_size_y"].get<int>();
+            }
+
+            if (data.contains("cell_size_x") && data.contains("cell_size_y"))
+            {
+                m_cell_size.x = data["cell_size_x"].get<float>();
+                m_cell_size.y = data["cell_size_y"].get<float>();
+            }
+
+            // Clear existing layers and tiles
+            m_layers.clear();
+
+            // Restore layers
+            if (data.contains("layers") && data["layers"].is_array())
+            {
+                for (const auto& layer_data : data["layers"])
+                {
+                    Layer layer;
+                    if (layer_data.contains("name"))
+                        layer.name = layer_data["name"].get<std::string>();
+                    if (layer_data.contains("visible"))
+                        layer.visible = layer_data["visible"].get<bool>();
+                    layer.tiles.clear();
+                    m_layers.push_back(layer);
+                }
+            }
+
+            // Ensure we have at least one layer
+            if (m_layers.empty())
+                m_layers.push_back({"Layer 1", true, {}});
+
+            // Restore types
+            m_types.clear();
+            if (data.contains("types") && data["types"].is_array())
+            {
+                for (const auto& type_value : data["types"])
+                {
+                    if (type_value.is_string())
+                        m_types.push_back(QString::fromStdString(type_value.get<std::string>()));
+                }
+            }
+
+            // Restore tiles
+            if (data.contains("tiles") && data["tiles"].is_array())
+            {
+                for (const auto& tile_data : data["tiles"])
+                {
+                    int layer_index = 0;
+                    if (tile_data.contains("layer"))
+                        layer_index = tile_data["layer"].get<int>();
+
+                    if (layer_index < 0 || layer_index >= static_cast<int>(m_layers.size()))
+                        continue;
+
+                    Tile tile;
+                    if (tile_data.contains("grid_x"))
+                        tile.pos.x = tile_data["grid_x"].get<int>();
+                    if (tile_data.contains("grid_y"))
+                        tile.pos.y = tile_data["grid_y"].get<int>();
+                    if (tile_data.contains("rect_left") && tile_data.contains("rect_top"))
+                        tile.rect.position = {
+                            tile_data["rect_left"].get<int>(),
+                            tile_data["rect_top"].get<int>()
+                        };
+                    if (tile_data.contains("rect_width") && tile_data.contains("rect_height"))
+                        tile.rect.size = {
+                            tile_data["rect_width"].get<int>(),
+                            tile_data["rect_height"].get<int>()
+                        };
+                    if (tile_data.contains("type"))
+                        tile.type = tile_data["type"].get<std::string>();
+
+                    m_layers[layer_index].tiles.push_back(tile);
+                }
+            }
+
+            m_active_layer_index = 0;
+
+            QStringList layer_names;
+            QList<bool> layer_visibility;
+            for (const auto& layer : m_layers)
+            {
+                layer_names.push_back(QString::fromStdString(layer.name));
+                layer_visibility.push_back(layer.visible);
+            }
+
+            emit grid_size_updated(m_grid_size);
+            emit cell_size_updated(sf::Vector2i(static_cast<int>(m_cell_size.x), static_cast<int>(m_cell_size.y)));
+            emit types_loaded(m_types);
+            emit layers_loaded(layer_names, layer_visibility, m_active_layer_index);
+        }
+        catch (const std::exception& e)
+        {
+            // Handle JSON parsing error
+            qWarning() << "Failed to load project:" << e.what();
+        }
     }
 }

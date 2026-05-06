@@ -26,9 +26,12 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
+    static constexpr int DRAG_THRESHOLD = 3; // pixels
+
     QGraphicsRectItem* m_selection_rect;
     sf::Vector2f m_tile_size;
     bool m_is_dragging;
+    bool m_actual_drag_started;
     QPointF m_drag_start;
     int m_start_tile_x;
     int m_start_tile_y;

@@ -80,19 +80,32 @@ MainWindow::MainWindow(QWidget* parent) :
 
     connect(grid, &Grid::tile_type_changed, palette, &Palette::clear_tileset_selection);
     connect(grid, &Grid::tile_type_changed, tilemap, &Tilemap::selected_type_changed);
+    connect(grid, &Grid::tile_type_added, tilemap, &Tilemap::add_type);
     connect(grid, &Grid::tile_type_selection_cleared, tilemap, &Tilemap::clear_selected_type);
     connect(grid, &Grid::tile_type_removed, tilemap, &Tilemap::removed_type);
+    connect(tilemap, &Tilemap::types_loaded, grid, &Grid::set_types);
 
     connect(layer_panel, &LayerPanel::layer_added, tilemap, &Tilemap::layer_added);
     connect(layer_panel, &LayerPanel::layer_removed, tilemap, &Tilemap::layer_removed);
     connect(layer_panel, &LayerPanel::layer_selected, tilemap, &Tilemap::layer_selected);
     connect(layer_panel, &LayerPanel::layer_visibility_changed, tilemap, &Tilemap::layer_visibility_changed);
+    connect(layer_panel, &LayerPanel::layer_moved, tilemap, &Tilemap::layer_moved);
+
+    connect(tilemap, &Tilemap::grid_size_updated, grid, &Grid::set_grid_size);
+    connect(tilemap, &Tilemap::cell_size_updated, grid, &Grid::set_cell_size);
+    connect(tilemap, &Tilemap::layers_loaded, layer_panel, &LayerPanel::set_layers);
 
     auto* save_action = new QAction("Save", tool_bar);
     save_action->setShortcut(QKeySequence("Ctrl + S"));
     tool_bar->addAction(save_action);
 
     connect(save_action, &QAction::triggered, tilemap, &Tilemap::save);
+
+    auto* load_action = new QAction("Load", tool_bar);
+    load_action->setShortcut(QKeySequence("Ctrl + L"));
+    tool_bar->addAction(load_action);
+
+    connect(load_action, &QAction::triggered, tilemap, &Tilemap::load);
 
     emit grid->grid_size_changed(grid->grid_size());
     emit grid->cell_size_changed(grid->cell_size());
