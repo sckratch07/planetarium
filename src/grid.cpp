@@ -12,7 +12,7 @@
 #include <SFML/Graphics/VertexArray.hpp>
 
 Grid::Grid(QWidget* parent) :
-    QWidget(parent)
+    QWidget(parent), m_grid_visible(true)
 {
     QSettings settings("Game Academy", "Planetarium");
 
@@ -210,6 +210,11 @@ void Grid::set_grid_size(const sf::Vector2i& new_size)
     emit grid_size_changed(m_grid_size);
 }
 
+void Grid::set_grid_visible(bool visible)
+{
+    m_grid_visible = visible;
+}
+
 void Grid::set_cell_size(const sf::Vector2i& new_size)
 {
     bool blocked_w = m_cell_size_width->blockSignals(true);
@@ -274,26 +279,40 @@ void Grid::draw(sf::RenderWindow& target) const
     float right  = m_grid_size.x * m_cell_size.x;
     float bottom = m_grid_size.y * m_cell_size.y;
 
-    // Aligner sur la grille
-    int firstX = static_cast<int>(std::floor(left / m_cell_size.x)) * m_cell_size.x;
-    int lastX  = static_cast<int>(std::ceil(right / m_cell_size.x)) * m_cell_size.x;
-
-    int firstY = static_cast<int>(std::floor(top / m_cell_size.y)) * m_cell_size.y;
-    int lastY  = static_cast<int>(std::ceil(bottom / m_cell_size.y)) * m_cell_size.y;
-
-    sf::VertexArray lines(sf::PrimitiveType::Lines);
-
-    for (float x = firstX; x <= lastX; x += m_cell_size.x)
+    if (m_grid_visible)
     {
-        lines.append(sf::Vertex(sf::Vector2f(x, top), sf::Color::White));
-        lines.append(sf::Vertex(sf::Vector2f(x, bottom), sf::Color::White));
+        // Aligner sur la grille
+        int firstX = static_cast<int>(std::floor(left / m_cell_size.x)) * m_cell_size.x;
+        int lastX  = static_cast<int>(std::ceil(right / m_cell_size.x)) * m_cell_size.x;
+
+        int firstY = static_cast<int>(std::floor(top / m_cell_size.y)) * m_cell_size.y;
+        int lastY  = static_cast<int>(std::ceil(bottom / m_cell_size.y)) * m_cell_size.y;
+
+        sf::VertexArray lines(sf::PrimitiveType::Lines);
+
+        for (float x = firstX; x <= lastX; x += m_cell_size.x)
+        {
+            lines.append(sf::Vertex(sf::Vector2f(x, top), sf::Color::White));
+            lines.append(sf::Vertex(sf::Vector2f(x, bottom), sf::Color::White));
+        }
+
+        for (float y = firstY; y <= lastY; y += m_cell_size.y)
+        {
+            lines.append(sf::Vertex(sf::Vector2f(left, y), sf::Color::White));
+            lines.append(sf::Vertex(sf::Vector2f(right, y), sf::Color::White));
+        }
+
+        target.draw(lines);
     }
 
-    for (float y = firstY; y <= lastY; y += m_cell_size.y)
-    {
-        lines.append(sf::Vertex(sf::Vector2f(left, y), sf::Color::White));
-        lines.append(sf::Vertex(sf::Vector2f(right, y), sf::Color::White));
-    }
-
-    target.draw(lines);
+    sf::VertexArray border(sf::PrimitiveType::Lines);
+    border.append(sf::Vertex(sf::Vector2f(left, top), sf::Color(180, 180, 255)));
+    border.append(sf::Vertex(sf::Vector2f(right, top), sf::Color(180, 180, 255)));
+    border.append(sf::Vertex(sf::Vector2f(right, top), sf::Color(180, 180, 255)));
+    border.append(sf::Vertex(sf::Vector2f(right, bottom), sf::Color(180, 180, 255)));
+    border.append(sf::Vertex(sf::Vector2f(right, bottom), sf::Color(180, 180, 255)));
+    border.append(sf::Vertex(sf::Vector2f(left, bottom), sf::Color(180, 180, 255)));
+    border.append(sf::Vertex(sf::Vector2f(left, bottom), sf::Color(180, 180, 255)));
+    border.append(sf::Vertex(sf::Vector2f(left, top), sf::Color(180, 180, 255)));
+    target.draw(border);
 }

@@ -78,6 +78,13 @@ MainWindow::MainWindow(QWidget* parent) :
         }
     );
 
+    connect(palette, &Palette::selection_mode_changed, tilemap, &Tilemap::set_auto_selection_mode);
+    connect(palette, &Palette::selection_mode_changed, grid, [grid](bool auto_selection)
+        {
+            grid->set_grid_visible(!auto_selection);
+        }
+    );
+
     connect(grid, &Grid::tile_type_changed, palette, &Palette::clear_tileset_selection);
     connect(grid, &Grid::tile_type_changed, tilemap, &Tilemap::selected_type_changed);
     connect(grid, &Grid::tile_type_added, tilemap, &Tilemap::add_type);

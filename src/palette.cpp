@@ -26,12 +26,17 @@ Palette::Palette(QWidget* parent) :
     auto* remove_button = new QPushButton("Remove Tileset", this);
     remove_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
+    m_mode_button = new QPushButton("Mode: Tile by Tile", this);
+    m_mode_button->setCheckable(true);
+    m_mode_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
     m_tree_view->setSizePolicy({QSizePolicy::Preferred, QSizePolicy::Preferred});
     m_tree_view->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
 
     auto* main_layout = new QVBoxLayout(this);
     main_layout->addWidget(load_button);
     main_layout->addWidget(remove_button);
+    main_layout->addWidget(m_mode_button);
     main_layout->addWidget(m_tree_view);
 
     auto* scene = new QGraphicsScene(this);
@@ -55,6 +60,7 @@ Palette::Palette(QWidget* parent) :
                 scene->setSceneRect(pixmap.rect());
 
                 m_view.fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+                m_view.set_current_image(pixmap.toImage());
             }
         }
     );
@@ -85,6 +91,14 @@ Palette::Palette(QWidget* parent) :
         }
     );
 
+    connect(m_mode_button, &QPushButton::toggled, this, [this](bool checked)
+        {
+            m_view.set_auto_selection_mode(checked);
+            m_mode_button->setText(checked ? "Mode: Auto Selection" : "Mode: Tile by Tile");
+            emit selection_mode_changed(checked);
+        }
+    );
+
     connect(m_tree_view, &QListWidget::itemSelectionChanged, this, [this, scene]()
         {
             const auto selected = m_tree_view->selectedItems();
@@ -108,6 +122,7 @@ Palette::Palette(QWidget* parent) :
             scene->setSceneRect(pixmap.rect());
 
             m_view.fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+            m_view.set_current_image(pixmap.toImage());
 
             emit texture_changed(path);
             emit tileset_selected(true);

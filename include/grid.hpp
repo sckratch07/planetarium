@@ -24,6 +24,7 @@ public slots:
     void set_grid_size(const sf::Vector2i& new_size);
     void set_cell_size(const sf::Vector2i& new_size);
     void set_types(const QStringList& types);
+    void set_grid_visible(bool visible);
 
 signals:
     void grid_size_changed(const sf::Vector2i& new_size);
@@ -36,6 +37,7 @@ signals:
 private:
     sf::Vector2i m_grid_size;
     sf::Vector2i m_cell_size;
+    bool m_grid_visible;
     QSpinBox* m_grid_size_width;
     QSpinBox* m_grid_size_height;
     QSpinBox* m_cell_size_width;

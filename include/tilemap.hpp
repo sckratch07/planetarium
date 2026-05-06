@@ -39,6 +39,8 @@ public slots:
     void layer_visibility_changed(int index, bool visible);
     void layer_moved(int from, int to);
 
+    void set_auto_selection_mode(bool enabled);
+
     void save();
     void load();
 
@@ -51,9 +53,10 @@ signals:
 private:
     struct Tile
     {
-        sf::Vector2i pos;
+        sf::Vector2f pos;
         sf::IntRect rect;
         std::string type = "None";
+        bool is_pixel_placed = false;
     };
 
     struct Layer
@@ -79,8 +82,9 @@ private:
     int m_selected_rect_width_tiles;
     int m_selected_rect_height_tiles;
 
-    sf::Vector2i m_preview_position;
+    sf::Vector2f m_preview_position;
     bool m_has_preview;
+    bool m_auto_selection_mode;
 };
 
 #endif

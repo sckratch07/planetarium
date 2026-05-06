@@ -3,15 +3,17 @@
 #include <QGraphicsRectItem>
 #include <QFileDialog>
 #include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 
 Tilemap::Tilemap(QObject* parent) :
     QObject(parent), m_active_layer_index(0), m_selected_type(""), m_selected_rect(nullptr), m_texture(nullptr),
     m_selected_rect_width_tiles(1), m_selected_rect_height_tiles(1),
-    m_preview_position(-1, -1), m_has_preview(false)
+    m_preview_position(-1, -1), m_has_preview(false), m_auto_selection_mode(false)
 {
     m_layers.push_back({"Layer 1", true, {}});
 }
@@ -35,39 +37,95 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
     if (!event) return;
 
     sf::Vector2f mouse_pos = target.mapPixelToCoords(sf::Mouse::getPosition(target));
-    sf::Vector2i grid_pos(
-        static_cast<int>(mouse_pos.x) / m_cell_size.x,
-        static_cast<int>(mouse_pos.y) / m_cell_size.y
-    );
+    sf::Vector2f grid_pos_float(mouse_pos.x / m_cell_size.x, mouse_pos.y / m_cell_size.y);
+    sf::Vector2i grid_pos(static_cast<int>(grid_pos_float.x), static_cast<int>(grid_pos_float.y));
 
-    if (grid_pos.x < 0 || grid_pos.y < 0 ||
-        grid_pos.x >= m_grid_size.x || grid_pos.y >= m_grid_size.y)
-    {
-        m_has_preview = false;
-        return;
+    if (m_auto_selection_mode) {
+        m_preview_position = mouse_pos;
+        m_has_preview = true;
+    } else {
+        if (grid_pos.x < 0 || grid_pos.y < 0 ||
+            grid_pos.x >= m_grid_size.x || grid_pos.y >= m_grid_size.y)
+        {
+            m_has_preview = false;
+            return;
+        }
+        m_preview_position = sf::Vector2f(grid_pos.x, grid_pos.y);
+        m_has_preview = true;
     }
 
-    m_preview_position = grid_pos;
-    m_has_preview = true;
-
     auto& layer = active_layer();
-    auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
-    {
-        return tile.pos == grid_pos;
-    });
 
     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
     {
         if (!m_selected_type.empty() && !m_selected_rect)
         {
-            if (existing != layer.tiles.end())
-                existing->type = m_selected_type;
+            if (m_auto_selection_mode)
+            {
+                auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
+                {
+                    if (!tile.is_pixel_placed)
+                        return false;
+
+                    sf::FloatRect object_rect(tile.pos,
+                        sf::Vector2f(static_cast<float>(tile.rect.size.x), static_cast<float>(tile.rect.size.y)));
+                    return object_rect.contains(mouse_pos);
+                });
+
+                if (existing != layer.tiles.end())
+                    existing->type = m_selected_type;
+            }
+            else
+            {
+                auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
+                {
+                    return !tile.is_pixel_placed && tile.pos == sf::Vector2f(grid_pos.x, grid_pos.y);
+                });
+
+                if (existing != layer.tiles.end())
+                    existing->type = m_selected_type;
+            }
             return;
         }
 
         if (!m_selected_rect) return;
 
         QRectF rect = m_selected_rect->rect();
+
+        if (m_auto_selection_mode)
+        {
+            if (!event->is<sf::Event::MouseButtonPressed>()) return;
+
+            sf::FloatRect world_rect(sf::Vector2f(mouse_pos.x, mouse_pos.y),
+                sf::Vector2f(static_cast<float>(rect.width()), static_cast<float>(rect.height())));
+            sf::FloatRect grid_bounds(sf::Vector2f(0.f, 0.f),
+                sf::Vector2f(static_cast<float>(m_grid_size.x * m_cell_size.x),
+                             static_cast<float>(m_grid_size.y * m_cell_size.y)));
+
+            auto clipped_rect_opt = world_rect.findIntersection(grid_bounds);
+            if (!clipped_rect_opt) return;
+
+            const sf::FloatRect clipped_rect = *clipped_rect_opt;
+            int clip_left = static_cast<int>(std::round(clipped_rect.position.x - world_rect.position.x));
+            int clip_top = static_cast<int>(std::round(clipped_rect.position.y - world_rect.position.y));
+            int clipped_width = static_cast<int>(std::floor(clipped_rect.size.x));
+            int clipped_height = static_cast<int>(std::floor(clipped_rect.size.y));
+
+            if (clipped_width <= 0 || clipped_height <= 0) return;
+
+            Tile new_tile;
+            new_tile.pos = sf::Vector2f(clipped_rect.position.x, clipped_rect.position.y);
+            new_tile.rect = sf::IntRect(
+                { static_cast<int>(rect.x()) + clip_left, static_cast<int>(rect.y()) + clip_top },
+                { clipped_width, clipped_height }
+            );
+            new_tile.type = m_selected_type;
+            new_tile.is_pixel_placed = true;
+            layer.tiles.push_back(new_tile);
+
+            return;
+        }
+
         int tile_size_x = static_cast<int>(rect.width()) / m_selected_rect_width_tiles;
         int tile_size_y = static_cast<int>(rect.height()) / m_selected_rect_height_tiles;
         int rect_start_x = static_cast<int>(rect.x());
@@ -88,7 +146,7 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
                 // Check if tile already exists
                 auto existing_tile = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
                 {
-                    return tile.pos == tile_pos;
+                    return !tile.is_pixel_placed && tile.pos == sf::Vector2f(tile_pos.x, tile_pos.y);
                 });
 
                 if (existing_tile != layer.tiles.end())
@@ -101,29 +159,47 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
                     continue;
                 }
 
-                layer.tiles.push_back({
-                    tile_pos,
-                    sf::IntRect(
-                        { rect_start_x + dx * tile_size_x, rect_start_y + dy * tile_size_y },
-                        { tile_size_x, tile_size_y }
-                    ),
-                    m_selected_type
-                });
+                Tile new_tile;
+                new_tile.pos = sf::Vector2f(tile_pos.x, tile_pos.y);
+                new_tile.rect = sf::IntRect(
+                    { rect_start_x + dx * tile_size_x, rect_start_y + dy * tile_size_y },
+                    { tile_size_x, tile_size_y }
+                );
+                new_tile.type = m_selected_type;
+                new_tile.is_pixel_placed = false;
+                layer.tiles.push_back(new_tile);
             }
         }
     }
     else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
     {
-        if (m_selected_type.empty())
+        if (m_auto_selection_mode)
         {
             std::erase_if(layer.tiles, [&](const Tile& tile)
             {
-                return tile.pos == grid_pos;
+                if (!tile.is_pixel_placed)
+                    return false;
+
+                sf::FloatRect world_rect(tile.pos,
+                    sf::Vector2f(static_cast<float>(tile.rect.size.x), static_cast<float>(tile.rect.size.y)));
+                return world_rect.contains(mouse_pos);
             });
         }
-        else if (existing != layer.tiles.end())
+        else if (m_selected_type.empty())
         {
-            existing->type = "None";
+            std::erase_if(layer.tiles, [&](const Tile& tile)
+            {
+                return !tile.is_pixel_placed && tile.pos == sf::Vector2f(grid_pos.x, grid_pos.y);
+            });
+        }
+        else
+        {
+            auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
+            {
+                return !tile.is_pixel_placed && tile.pos == sf::Vector2f(grid_pos.x, grid_pos.y);
+            });
+            if (existing != layer.tiles.end())
+                existing->type = "None";
         }
     }
 }
@@ -145,14 +221,25 @@ void Tilemap::draw(sf::RenderWindow& target)
 
         for (const auto& tile : layer.tiles)
         {
-            shape.setPosition({ tile.pos.x * m_cell_size.x, tile.pos.y * m_cell_size.y });
+            sf::Vector2f position = tile.pos;
+            if (tile.is_pixel_placed)
+            {
+                shape.setPosition(position);
+            }
+            else
+            {
+                position = { tile.pos.x * m_cell_size.x, tile.pos.y * m_cell_size.y };
+                shape.setPosition(position);
+            }
+            
+            shape.setSize(sf::Vector2f(static_cast<float>(tile.rect.size.x), static_cast<float>(tile.rect.size.y)));
             shape.setTextureRect(tile.rect);
             target.draw(shape);
 
             if (is_active && !m_selected_type.empty() && tile.type == m_selected_type)
             {
-                sf::RectangleShape highlight(m_cell_size);
-                highlight.setPosition({ tile.pos.x * m_cell_size.x, tile.pos.y * m_cell_size.y });
+                sf::RectangleShape highlight(sf::Vector2f(static_cast<float>(tile.rect.size.x), static_cast<float>(tile.rect.size.y)));
+                highlight.setPosition(position);
                 highlight.setFillColor(sf::Color(255, 0, 0, 80));
                 highlight.setOutlineColor(sf::Color::Red);
                 highlight.setOutlineThickness(1.f);
@@ -166,31 +253,58 @@ void Tilemap::draw(sf::RenderWindow& target)
         if (m_selected_rect)
         {
             QRectF rect = m_selected_rect->rect();
-            int tile_size_x = static_cast<int>(rect.width()) / m_selected_rect_width_tiles;
-            int tile_size_y = static_cast<int>(rect.height()) / m_selected_rect_height_tiles;
-            sf::RectangleShape preview_shape(m_cell_size);
-            preview_shape.setTexture(m_texture.get());
-            preview_shape.setFillColor(sf::Color(255, 255, 255, 160));
-            preview_shape.setOutlineColor(sf::Color(0, 200, 255, 180));
-            preview_shape.setOutlineThickness(1.f);
-
-            for (int dy = 0; dy < m_selected_rect_height_tiles; ++dy)
+            if (m_auto_selection_mode) {
+                sf::RectangleShape preview_shape(sf::Vector2f(rect.width(), rect.height()));
+                preview_shape.setTexture(m_texture.get());
+                preview_shape.setPosition(m_preview_position);
+                preview_shape.setTextureRect(sf::IntRect({static_cast<int>(rect.x()), static_cast<int>(rect.y())}, {static_cast<int>(rect.width()), static_cast<int>(rect.height())}));
+                preview_shape.setFillColor(sf::Color(255, 255, 255, 160));
+                preview_shape.setOutlineColor(sf::Color(0, 200, 255, 180));
+                preview_shape.setOutlineThickness(1.f);
+                target.draw(preview_shape);
+            }
+            else
             {
-                for (int dx = 0; dx < m_selected_rect_width_tiles; ++dx)
-                {
-                    int tile_x = m_preview_position.x + dx;
-                    int tile_y = m_preview_position.y + dy;
-                    if (tile_x < 0 || tile_y < 0 || tile_x >= m_grid_size.x || tile_y >= m_grid_size.y)
-                        continue;
+                int tile_size_x = static_cast<int>(rect.width()) / m_selected_rect_width_tiles;
+                int tile_size_y = static_cast<int>(rect.height()) / m_selected_rect_height_tiles;
+                const sf::FloatRect grid_bounds({ 0.f, 0.f },
+                    { static_cast<float>(m_grid_size.x * m_cell_size.x),
+                      static_cast<float>(m_grid_size.y * m_cell_size.y) });
 
-                    preview_shape.setPosition({ tile_x * m_cell_size.x,
-                                                tile_y * m_cell_size.y });
-                    preview_shape.setTextureRect(sf::IntRect(
-                        { static_cast<int>(rect.x()) + dx * tile_size_x,
-                        static_cast<int>(rect.y()) + dy * tile_size_y },
-                        { tile_size_x, tile_size_y }
-                    ));
-                    target.draw(preview_shape);
+                for (int dy = 0; dy < m_selected_rect_height_tiles; ++dy)
+                {
+                    for (int dx = 0; dx < m_selected_rect_width_tiles; ++dx)
+                    {
+                        sf::FloatRect source_world_rect(sf::Vector2f(
+                            static_cast<float>(static_cast<int>(m_preview_position.x) + dx) * m_cell_size.x,
+                            static_cast<float>(static_cast<int>(m_preview_position.y) + dy) * m_cell_size.y),
+                            sf::Vector2f(static_cast<float>(tile_size_x), static_cast<float>(tile_size_y)));
+
+                        auto clipped_rect_opt = source_world_rect.findIntersection(grid_bounds);
+                        if (!clipped_rect_opt)
+                            continue;
+
+                        const sf::FloatRect clipped_rect = *clipped_rect_opt;
+                        int clip_left = static_cast<int>(std::round(clipped_rect.position.x - source_world_rect.position.x));
+                        int clip_top = static_cast<int>(std::round(clipped_rect.position.y - source_world_rect.position.y));
+                        int clipped_width = static_cast<int>(std::floor(clipped_rect.size.x));
+                        int clipped_height = static_cast<int>(std::floor(clipped_rect.size.y));
+                        if (clipped_width <= 0 || clipped_height <= 0)
+                            continue;
+
+                        sf::RectangleShape preview_shape({ static_cast<float>(clipped_width), static_cast<float>(clipped_height) });
+                        preview_shape.setTexture(m_texture.get());
+                        preview_shape.setFillColor(sf::Color(255, 255, 255, 160));
+                        preview_shape.setOutlineColor(sf::Color(0, 200, 255, 180));
+                        preview_shape.setOutlineThickness(1.f);
+                        preview_shape.setPosition({ clipped_rect.position.x, clipped_rect.position.y });
+                        preview_shape.setTextureRect(sf::IntRect(
+                            { static_cast<int>(rect.x()) + dx * tile_size_x + clip_left,
+                              static_cast<int>(rect.y()) + dy * tile_size_y + clip_top },
+                            { clipped_width, clipped_height }
+                        ));
+                        target.draw(preview_shape);
+                    }
                 }
             }
         }
@@ -213,7 +327,8 @@ void Tilemap::grid_size_changed(const sf::Vector2i& new_size)
     {
         std::erase_if(layer.tiles, [&](const Tile& tile)
         {
-            return tile.pos.x >= new_size.x || tile.pos.y >= new_size.y;
+            return !tile.is_pixel_placed &&
+                (tile.pos.x >= new_size.x || tile.pos.y >= new_size.y);
         });
     }
 }
@@ -336,6 +451,11 @@ void Tilemap::layer_moved(int from, int to)
     }
 }
 
+void Tilemap::set_auto_selection_mode(bool enabled)
+{
+    m_auto_selection_mode = enabled;
+}
+
 void Tilemap::save()
 {
     if (QString path = QFileDialog::getExistingDirectory(nullptr, "Select save folder", ""); !path.isEmpty())
@@ -374,7 +494,7 @@ void Tilemap::save()
                 nlohmann::json t;
                 t["grid_x"] = tile.pos.x;
                 t["grid_y"] = tile.pos.y;
-                t["rect_left"] = tile.rect.position.x;
+                    t["rect_left"] = tile.rect.position.x;
                 t["rect_top"] = tile.rect.position.y;
                 t["rect_width"] = tile.rect.size.x;
                 t["rect_height"] = tile.rect.size.y;
@@ -466,15 +586,19 @@ void Tilemap::load()
                     if (tile_data.contains("grid_y"))
                         tile.pos.y = tile_data["grid_y"].get<int>();
                     if (tile_data.contains("rect_left") && tile_data.contains("rect_top"))
+                    {
                         tile.rect.position = {
                             tile_data["rect_left"].get<int>(),
                             tile_data["rect_top"].get<int>()
                         };
+                    }
                     if (tile_data.contains("rect_width") && tile_data.contains("rect_height"))
+                    {
                         tile.rect.size = {
                             tile_data["rect_width"].get<int>(),
                             tile_data["rect_height"].get<int>()
                         };
+                    }
                     if (tile_data.contains("type"))
                         tile.type = tile_data["type"].get<std::string>();
 

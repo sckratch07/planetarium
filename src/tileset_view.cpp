@@ -3,11 +3,12 @@
 #include <QGraphicsRectItem>
 #include <QWheelEvent>
 #include <algorithm>
+#include <utils/sprite_sheet_cutting.hpp>
 
 TilesetView::TilesetView(QWidget* parent) :
     QGraphicsView(parent), m_selection_rect(nullptr), m_tile_size({32, 32}),
     m_is_dragging(false), m_actual_drag_started(false), m_drag_start({0, 0}), m_start_tile_x(0), m_start_tile_y(0),
-    m_selected_width_tiles(1), m_selected_height_tiles(1)
+    m_selected_width_tiles(1), m_selected_height_tiles(1), m_auto_selection_mode(false)
 {
 
 }
@@ -22,6 +23,16 @@ void TilesetView::reset_rect()
         m_selection_rect = nullptr;
     }
     emit selected_rect_changed(nullptr);
+}
+
+void TilesetView::set_auto_selection_mode(bool enabled)
+{
+    m_auto_selection_mode = enabled;
+}
+
+void TilesetView::set_current_image(const QImage& img)
+{
+    m_current_image = img;
 }
 
 void TilesetView::tile_size_changed(const sf::Vector2i& new_size)
@@ -45,16 +56,48 @@ void TilesetView::mousePressEvent(QMouseEvent* event)
 {
     if (!scene()) return;
 
-    QPointF scenePos = mapToScene(event->pos());
-    m_start_tile_x = static_cast<int>(scenePos.x()) / m_tile_size.x;
-    m_start_tile_y = static_cast<int>(scenePos.y()) / m_tile_size.y;
-    m_drag_start = scenePos;
+    if (m_auto_selection_mode)
+    {
+        QPointF scene_pos = mapToScene(event->pos());
+
+        int x = static_cast<int>(scene_pos.x());
+        int y = static_cast<int>(scene_pos.y());
+
+        Element elem = cut_sprite_sheet(m_current_image, x, y);
+        if (elem.width > 0 && elem.height > 0)
+        {
+            if (m_selection_rect)
+            {
+                scene()->removeItem(m_selection_rect);
+                delete m_selection_rect;
+                m_selection_rect = nullptr;
+            }
+
+            m_selection_rect = scene()->addRect(elem.x, elem.y, elem.width, elem.height, QPen(Qt::red, 2));
+
+            emit selected_rect_changed(m_selection_rect);
+            
+            int width_tiles = (elem.width + static_cast<int>(m_tile_size.x) - 1) / static_cast<int>(m_tile_size.x);
+            int height_tiles = (elem.height + static_cast<int>(m_tile_size.y) - 1) / static_cast<int>(m_tile_size.y);
+
+            emit selected_rect_dimensions_changed(width_tiles, height_tiles);
+        }
+        return;
+    }
+
+    QPointF scene_pos = mapToScene(event->pos());
+    m_start_tile_x = static_cast<int>(scene_pos.x()) / m_tile_size.x;
+    m_start_tile_y = static_cast<int>(scene_pos.y()) / m_tile_size.y;
+    m_drag_start = scene_pos;
+    
     m_is_dragging = true;
     m_actual_drag_started = false;
 }
 
 void TilesetView::mouseMoveEvent(QMouseEvent* event)
 {
+    if (m_auto_selection_mode) return;
+
     if (!m_is_dragging || !scene()) return;
 
     QPointF scenePos = mapToScene(event->pos());
@@ -104,6 +147,8 @@ void TilesetView::mouseMoveEvent(QMouseEvent* event)
 
 void TilesetView::mouseReleaseEvent(QMouseEvent* event)
 {
+    if (m_auto_selection_mode) return;
+
     if (m_is_dragging && !m_actual_drag_started)
     {
         // Simple click without dragging - select single tile

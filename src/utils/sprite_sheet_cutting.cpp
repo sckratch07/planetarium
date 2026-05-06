@@ -37,7 +37,7 @@ Element cut_sprite_sheet(QImage &image, int x, int y)
         auto py = pixel.second;
 
         // Check if pixel is out of image
-        if(px < 0 || py < 0 || px > image_width || py > image_height) continue;
+        if(px < 0 || py < 0 || px >= image_width || py >= image_height) continue;
         // Check if pixel have been visited before
         if(visited[px][py]) continue;
         // Check if the alpha value of the pixel is under the minimum alpha value accepted
