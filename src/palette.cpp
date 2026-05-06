@@ -1,6 +1,7 @@
 ﻿#include <palette.hpp>
 #include <tileset_view.hpp>
 
+#include <algorithm>
 #include <QListWidget>
 #include <QSettings>
 #include <QBoxLayout>
@@ -22,11 +23,15 @@ Palette::Palette(QWidget* parent) :
     auto* load_button = new QPushButton("Add Tileset", this);
     load_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
+    auto* remove_button = new QPushButton("Remove Tileset", this);
+    remove_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
     m_tree_view->setSizePolicy({QSizePolicy::Preferred, QSizePolicy::Preferred});
     m_tree_view->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
 
     auto* main_layout = new QVBoxLayout(this);
     main_layout->addWidget(load_button);
+    main_layout->addWidget(remove_button);
     main_layout->addWidget(m_tree_view);
 
     auto* scene = new QGraphicsScene(this);
@@ -50,6 +55,32 @@ Palette::Palette(QWidget* parent) :
                 scene->setSceneRect(pixmap.rect());
 
                 m_view.fitInView(scene->sceneRect(), Qt::KeepAspectRatio);
+            }
+        }
+    );
+
+    connect(remove_button, &QPushButton::pressed, this, [this, scene]
+        {
+            const auto selected = m_tree_view->selectedItems();
+            if (selected.isEmpty())
+                return;
+
+            auto* item = selected[0];
+            int row = m_tree_view->row(item);
+            delete m_tree_view->takeItem(row);
+
+            if (m_tree_view->count() > 0)
+            {
+                int next_row = std::min(row, m_tree_view->count() - 1);
+                auto* next_item = m_tree_view->item(next_row);
+                if (next_item)
+                    next_item->setSelected(true);
+            }
+            else
+            {
+                scene->clear();
+                m_view.reset_rect();
+                emit tileset_selected(false);
             }
         }
     );
@@ -109,5 +140,28 @@ void Palette::clear_tileset_selection()
     m_tree_view->clearSelection();
     m_tree_view->blockSignals(blocked);
     m_view.reset_rect();
+}
+
+void Palette::remove_selected_tileset()
+{
+    const auto selected = m_tree_view->selectedItems();
+    if (selected.isEmpty())
+        return;
+
+    int row = m_tree_view->row(selected[0]);
+    delete m_tree_view->takeItem(row);
+
+    if (m_tree_view->count() > 0)
+    {
+        int next_row = std::min(row, m_tree_view->count() - 1);
+        auto* next_item = m_tree_view->item(next_row);
+        if (next_item)
+            next_item->setSelected(true);
+    }
+    else
+    {
+        m_view.reset_rect();
+        emit tileset_selected(false);
+    }
 }
 

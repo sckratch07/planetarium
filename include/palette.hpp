@@ -18,6 +18,7 @@ public:
 public slots:
     void reset_selection();
     void clear_tileset_selection();
+    void remove_selected_tileset();
 
 signals:
     void tile_size_changed(const sf::Vector2f& new_size);

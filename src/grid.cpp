@@ -88,6 +88,16 @@ Grid::Grid(QWidget* parent) :
     m_type_list = new QListWidget(this);
     m_type_list->setSizePolicy({QSizePolicy::Preferred, QSizePolicy::Preferred});
     m_type_list->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
+    m_type_list->setAlternatingRowColors(true);
+
+    auto* collision_item = new QListWidgetItem("collision", m_type_list);
+    m_type_list->addItem(collision_item);
+    auto* door_item = new QListWidgetItem("door", m_type_list);
+    m_type_list->addItem(door_item);
+    auto* spawn_item = new QListWidgetItem("spawn", m_type_list);
+    m_type_list->addItem(spawn_item);
+    auto* enemy_item = new QListWidgetItem("enemy", m_type_list);
+    m_type_list->addItem(enemy_item);
 
     auto* button_layout = new QHBoxLayout();
     button_layout->addWidget(add_type_button);
