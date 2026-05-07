@@ -13,30 +13,40 @@
 #include <SFML/Graphics/Texture.hpp>
 
 Palette::Palette(QWidget* parent) :
-    QWidget(parent), m_view(this), m_tile_size({32, 32}), m_tree_view(new QListWidget(this))
+    QWidget(parent), m_view(this), m_tile_size({32, 32}), m_tree_view(new QListWidget(this)),
+    m_mode_button(new QPushButton("Mode: Tile by Tile", this)),
+    m_unselect_button(new QPushButton("Deselect", this))
 {
     QSettings settings("Game Academy", "Planetarium");
     settings.beginGroup("palette");
     restoreGeometry(settings.value("geometry").toByteArray());
     settings.endGroup();
-    
+
+    m_tree_view->setSizePolicy({QSizePolicy::Preferred, QSizePolicy::Preferred});
+    m_tree_view->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
+
     auto* load_button = new QPushButton("Add Tileset", this);
     load_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
     auto* remove_button = new QPushButton("Remove Tileset", this);
     remove_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
-    m_mode_button = new QPushButton("Mode: Tile by Tile", this);
+    auto* tileset_menu_layout = new QHBoxLayout();
+    tileset_menu_layout->addWidget(load_button);
+    tileset_menu_layout->addWidget(remove_button);
+
     m_mode_button->setCheckable(true);
     m_mode_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
-    m_tree_view->setSizePolicy({QSizePolicy::Preferred, QSizePolicy::Preferred});
-    m_tree_view->setSelectionMode(QAbstractItemView::SelectionMode::SingleSelection);
+    m_unselect_button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+    auto* tileset_settings_layout = new QHBoxLayout();
+    tileset_menu_layout->addWidget(m_mode_button);
+    tileset_menu_layout->addWidget(m_unselect_button);
 
     auto* main_layout = new QVBoxLayout(this);
-    main_layout->addWidget(load_button);
-    main_layout->addWidget(remove_button);
-    main_layout->addWidget(m_mode_button);
+    main_layout->addLayout(tileset_menu_layout);
+    main_layout->addLayout(tileset_settings_layout);
     main_layout->addWidget(m_tree_view);
 
     auto* scene = new QGraphicsScene(this);
@@ -96,6 +106,12 @@ Palette::Palette(QWidget* parent) :
             m_view.set_auto_selection_mode(checked);
             m_mode_button->setText(checked ? "Mode: Auto Selection" : "Mode: Tile by Tile");
             emit selection_mode_changed(checked);
+        }
+    );
+
+    connect(m_unselect_button, &QPushButton::pressed, this, [this]
+        {
+            m_view.reset_rect();
         }
     );
 

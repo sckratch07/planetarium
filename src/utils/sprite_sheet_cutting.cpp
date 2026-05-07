@@ -4,64 +4,59 @@
 #include <queue>
 #include <iostream>
 
-Element cut_sprite_sheet(QImage &image, int x, int y)
-{    
-    // Image Size
-    int image_width = image.size().width();
-    int image_height = image.size().height();
+Element cut_sprite_sheet(QImage& image, int x, int y)
+{
+    const int width = image.width();
+    const int height = image.height();
 
-    // Bounds
+    constexpr int alpha_minimum = 10;
+
     int min_x = x;
     int min_y = y;
     int max_x = x;
     int max_y = y;
-    
-    const int alpha_minimum = 10;
-    
-    // Visited Pixels
-    std::vector<std::vector<bool>> visited(image_width, std::vector<bool>(image_height, false));
 
-    // All asset pixel
-    std::vector<std::pair<int, int>> pixels;
+    std::vector<uint8_t> visited(width * height, 0);
+
+    std::queue<std::pair<int, int>> queue;
     std::vector<std::pair<int, int>> pixels_keep;
-    pixels.push_back({x, y});
+    queue.push({x, y});
 
-    // Flood Fill
-    while(!pixels.empty()){
-        // Get first pixel of the queue
-        auto pixel = pixels.front();
-        pixels.erase(pixels.begin());
+    while (!queue.empty())
+    {
+        auto [px, py] = queue.front();
+        queue.pop();
 
-        // Coords of the pixel
-        auto px = pixel.first;
-        auto py = pixel.second;
+        if (px < 0 || py < 0 || px >= width || py >= height) continue;
+        int index = py * width + px;
 
-        // Check if pixel is out of image
-        if(px < 0 || py < 0 || px >= image_width || py >= image_height) continue;
-        // Check if pixel have been visited before
-        if(visited[px][py]) continue;
-        // Check if the alpha value of the pixel is under the minimum alpha value accepted
-        if(qAlpha(image.pixel({px, py})) <= alpha_minimum) continue;
+        if (visited[index]) continue;
 
-        // Set visited value to true
-        visited[px][py] = true;
-        
-        pixels_keep.push_back(pixel);
+        visited[index] = 1;
 
-        // Set the new bounds
+        const QRgb* line = reinterpret_cast<const QRgb*>(image.scanLine(py));
+        if (qAlpha(line[px]) <= alpha_minimum) continue;
+
+        pixels_keep.push_back({px, py});
+
         min_x = std::min(min_x, px);
         min_y = std::min(min_y, py);
         max_x = std::max(max_x, px);
         max_y = std::max(max_y, py);
 
-        // Add next pixel to check
-        pixels.push_back({px+1, py});
-        pixels.push_back({px-1, py});
-        pixels.push_back({px, py+1});
-        pixels.push_back({px, py-1});
-
+        queue.push({px + 1, py});
+        queue.push({px - 1, py});
+        queue.push({px, py + 1});
+        queue.push({px, py - 1});
     }
-    return Element(min_x, min_y, max_x - min_x, max_y - min_y, std::vector<std::pair<int, int>>(pixels_keep.begin(), pixels_keep.end()));
+
+    return Element(
+        min_x,
+        min_y,
+        max_x - min_x + 1,
+        max_y - min_y + 1,
+        std::move(pixels_keep)
+    );
 }
 
 sf::Image qimage_to_sfimage(const QImage& qimage, Element element)

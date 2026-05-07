@@ -12,7 +12,7 @@
 
 Tilemap::Tilemap(QObject* parent) :
     QObject(parent), m_active_layer_index(0), m_selected_type(""), m_selected_rect(nullptr), m_texture(nullptr),
-    m_selected_rect_width_tiles(1), m_selected_rect_height_tiles(1),
+    m_selected_rect_width_tiles(1), m_selected_rect_height_tiles(1), m_selected_tile(nullptr),
     m_preview_position(-1, -1), m_has_preview(false), m_auto_selection_mode(false)
 {
     m_layers.push_back({"Layer 1", true, {}});
@@ -40,10 +40,13 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
     sf::Vector2f grid_pos_float(mouse_pos.x / m_cell_size.x, mouse_pos.y / m_cell_size.y);
     sf::Vector2i grid_pos(static_cast<int>(grid_pos_float.x), static_cast<int>(grid_pos_float.y));
 
-    if (m_auto_selection_mode) {
+    if (m_auto_selection_mode)
+    {
         m_preview_position = mouse_pos;
         m_has_preview = true;
-    } else {
+    }
+    else
+    {
         if (grid_pos.x < 0 || grid_pos.y < 0 ||
             grid_pos.x >= m_grid_size.x || grid_pos.y >= m_grid_size.y)
         {
@@ -56,13 +59,42 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
 
     auto& layer = active_layer();
 
+    if (!m_selected_rect)
+    {
+        if (m_selected_tile)
+        {
+            sf::FloatRect map_bounds({ 0.f, 0.f },
+                { static_cast<float>(m_grid_size.x * m_cell_size.x),
+                  static_cast<float>(m_grid_size.y * m_cell_size.y) });
+            m_gizmo.event(m_selected_tile, event, target, map_bounds);
+        }
+
+        if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) && !m_gizmo.arrow_handle())
+        {
+            auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&mouse_pos](const Tile& tile)
+                {
+                    if (!tile.is_pixel_placed) return false;
+
+                    sf::FloatRect object_rect(tile.pos, sf::Vector2f(static_cast<float>(tile.rect.size.x), static_cast<float>(tile.rect.size.y)));
+                    return object_rect.contains(mouse_pos);
+                }
+            );
+
+            if (existing != layer.tiles.end())
+                m_selected_tile = &(*existing);
+            else
+                m_selected_tile = nullptr;
+        }
+        return;
+    }
+
     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
     {
         if (!m_selected_type.empty() && !m_selected_rect)
         {
             if (m_auto_selection_mode)
             {
-                auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
+                auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&mouse_pos](const Tile& tile)
                 {
                     if (!tile.is_pixel_placed)
                         return false;
@@ -77,7 +109,7 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
             }
             else
             {
-                auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
+                auto existing = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&grid_pos](const Tile& tile)
                 {
                     return !tile.is_pixel_placed && tile.pos == sf::Vector2f(grid_pos.x, grid_pos.y);
                 });
@@ -317,6 +349,11 @@ void Tilemap::draw(sf::RenderWindow& target)
             preview_shape.setOutlineThickness(1.f);
             target.draw(preview_shape);
         }
+    }
+
+    if (m_selected_tile)
+    {
+        m_gizmo.draw(m_selected_tile, target);
     }
 }
 

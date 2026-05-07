@@ -32,6 +32,7 @@ private:
     TilesetView m_view;
     sf::Vector2f m_tile_size;
     QPushButton* m_mode_button;
+    QPushButton* m_unselect_button;
 };
 
 #endif

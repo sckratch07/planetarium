@@ -1,24 +1,36 @@
 #ifndef TILEMAP_HPP
 #define TILEMAP_HPP
 
+#include <utils/gizmo_view.hpp>
+
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QList>
+
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Vector2.hpp>
+
 #include <optional>
 #include <vector>
-#include <QList>
 
 class QGraphicsRectItem;
+
+struct Tile
+{
+    sf::Vector2f pos;
+    sf::IntRect rect;
+    std::string type = "None";
+    bool is_pixel_placed = false;
+};
 
 class Tilemap : public QObject
 {
     Q_OBJECT
 public:
     Tilemap(QObject* parent = nullptr);
-
+    
 public slots:
     void event(const std::optional<sf::Event>& event, sf::RenderWindow& target);
     void draw(sf::RenderWindow& target);
@@ -51,14 +63,6 @@ signals:
     void layers_loaded(const QStringList& names, const QList<bool>& visibility, int selected_index);
 
 private:
-    struct Tile
-    {
-        sf::Vector2f pos;
-        sf::IntRect rect;
-        std::string type = "None";
-        bool is_pixel_placed = false;
-    };
-
     struct Layer
     {
         std::string name;
@@ -85,6 +89,9 @@ private:
     sf::Vector2f m_preview_position;
     bool m_has_preview;
     bool m_auto_selection_mode;
+
+    Tile* m_selected_tile;
+    GizmoView m_gizmo;
 };
 
 #endif
