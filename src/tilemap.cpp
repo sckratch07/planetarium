@@ -16,16 +16,17 @@ Tilemap::Tilemap(QObject* parent) :
     m_preview_position(-1, -1), m_has_preview(false), m_auto_selection_mode(false)
 {
     m_layers.push_back({"Layer 1", true, {}});
+    m_gizmo.change_layer(&m_layers[0]);
 }
 
-Tilemap::Layer& Tilemap::active_layer()
+Layer& Tilemap::active_layer()
 {
     if (m_active_layer_index < 0 || m_active_layer_index >= static_cast<int>(m_layers.size()))
         m_active_layer_index = 0;
     return m_layers[m_active_layer_index];
 }
 
-const Tilemap::Layer& Tilemap::active_layer() const
+const Layer& Tilemap::active_layer() const
 {
     if (m_active_layer_index < 0 || m_active_layer_index >= static_cast<int>(m_layers.size()))
         return m_layers.front();
@@ -175,7 +176,6 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
                     tile_pos.x >= m_grid_size.x || tile_pos.y >= m_grid_size.y)
                     continue;
 
-                // Check if tile already exists
                 auto existing_tile = std::find_if(layer.tiles.begin(), layer.tiles.end(), [&](const Tile& tile)
                 {
                     return !tile.is_pixel_placed && tile.pos == sf::Vector2f(tile_pos.x, tile_pos.y);
@@ -231,7 +231,7 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
                 return !tile.is_pixel_placed && tile.pos == sf::Vector2f(grid_pos.x, grid_pos.y);
             });
             if (existing != layer.tiles.end())
-                existing->type = "None";
+                existing->type = "";
         }
     }
 }
@@ -433,6 +433,7 @@ void Tilemap::layer_added(const QString& name)
 
     m_layers.push_back({layer_name, true, {}});
     m_active_layer_index = static_cast<int>(m_layers.size()) - 1;
+    m_gizmo.change_layer(&m_layers[m_active_layer_index]);
 }
 
 void Tilemap::layer_removed(int index)
@@ -450,12 +451,14 @@ void Tilemap::layer_removed(int index)
     {
         m_active_layer_index = static_cast<int>(m_layers.size()) - 1;
     }
+    m_gizmo.change_layer(&m_layers[m_active_layer_index]);
 }
 
 void Tilemap::layer_selected(int index)
 {
     if (index < 0 || index >= static_cast<int>(m_layers.size())) return;
     m_active_layer_index = index;
+    m_gizmo.change_layer(&m_layers[index]);
 }
 
 void Tilemap::layer_visibility_changed(int index, bool visible)
@@ -486,6 +489,7 @@ void Tilemap::layer_moved(int from, int to)
     {
         m_active_layer_index += 1;
     }
+    m_gizmo.change_layer(&m_layers[m_active_layer_index]);
 }
 
 void Tilemap::set_auto_selection_mode(bool enabled)

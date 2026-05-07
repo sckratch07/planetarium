@@ -12,6 +12,7 @@ namespace sf
 }
 
 struct Tile;
+struct Layer;
 
 enum DragState { Idle, Hovering, Dragging };
 
@@ -32,6 +33,7 @@ public:
     void draw(Tile* tile, sf::RenderWindow& target);
 
     bool arrow_handle();
+    void change_layer(Layer* layer);
 
 private:
     GizmoArrow m_arrow_x;
@@ -39,6 +41,8 @@ private:
     
     Drag m_drag;
     GizmoArrow::Axis m_selected_axis;
+
+    Layer* m_layer;
 };
 
 #endif

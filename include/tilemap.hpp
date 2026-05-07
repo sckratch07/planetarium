@@ -25,6 +25,13 @@ struct Tile
     bool is_pixel_placed = false;
 };
 
+struct Layer
+{
+    std::string name;
+    bool visible = true;
+    std::vector<Tile> tiles;
+};
+
 class Tilemap : public QObject
 {
     Q_OBJECT
@@ -63,13 +70,6 @@ signals:
     void layers_loaded(const QStringList& names, const QList<bool>& visibility, int selected_index);
 
 private:
-    struct Layer
-    {
-        std::string name;
-        bool visible = true;
-        std::vector<Tile> tiles;
-    };
-
     Layer& active_layer();
     const Layer& active_layer() const;
 
