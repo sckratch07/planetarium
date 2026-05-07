@@ -94,8 +94,8 @@ Palette::Palette(QWidget* parent) :
             }
             else
             {
-                scene->clear();
                 m_view.reset_rect();
+                scene->clear();
                 emit tileset_selected(false);
             }
         }

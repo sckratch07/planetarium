@@ -15,13 +15,15 @@ TilesetView::TilesetView(QWidget* parent) :
 
 void TilesetView::reset_rect()
 {
-    if (m_selection_rect)
-    {
-        if (scene())
-            scene()->removeItem(m_selection_rect);
-        delete m_selection_rect;
-        m_selection_rect = nullptr;
-    }
+    if (!m_selection_rect)
+        return;
+
+    QGraphicsScene* s = scene();
+    if (s && m_selection_rect->scene() == s)
+        s->removeItem(m_selection_rect);
+
+    delete m_selection_rect;
+    m_selection_rect = nullptr;
     emit selected_rect_changed(nullptr);
 }
 
