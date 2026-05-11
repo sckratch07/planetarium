@@ -60,7 +60,7 @@ void Tilemap::event(const std::optional<sf::Event>& event, sf::RenderWindow& tar
 
     auto& layer = active_layer();
 
-    if (!m_selected_rect)
+    if (!m_selected_rect && m_selected_type.empty())
     {
         if (m_selected_tile)
         {
