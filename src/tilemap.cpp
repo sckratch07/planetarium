@@ -535,10 +535,11 @@ void Tilemap::save()
                 nlohmann::json t;
                 t["grid_x"] = tile.pos.x;
                 t["grid_y"] = tile.pos.y;
-                    t["rect_left"] = tile.rect.position.x;
+                t["rect_left"] = tile.rect.position.x;
                 t["rect_top"] = tile.rect.position.y;
                 t["rect_width"] = tile.rect.size.x;
                 t["rect_height"] = tile.rect.size.y;
+                t["pixel_pos"] = tile.is_pixel_placed;
                 t["type"] = tile.type;
                 t["layer"] = layer_index;
                 data["tiles"].push_back(t);
@@ -624,8 +625,10 @@ void Tilemap::load()
                     Tile tile;
                     if (tile_data.contains("grid_x"))
                         tile.pos.x = tile_data["grid_x"].get<int>();
+
                     if (tile_data.contains("grid_y"))
                         tile.pos.y = tile_data["grid_y"].get<int>();
+
                     if (tile_data.contains("rect_left") && tile_data.contains("rect_top"))
                     {
                         tile.rect.position = {
@@ -633,6 +636,7 @@ void Tilemap::load()
                             tile_data["rect_top"].get<int>()
                         };
                     }
+
                     if (tile_data.contains("rect_width") && tile_data.contains("rect_height"))
                     {
                         tile.rect.size = {
@@ -640,8 +644,12 @@ void Tilemap::load()
                             tile_data["rect_height"].get<int>()
                         };
                     }
+
                     if (tile_data.contains("type"))
                         tile.type = tile_data["type"].get<std::string>();
+
+                    if (tile_data.contains("pixel_pos"))
+                        tile.is_pixel_placed = tile_data["pixel_pos"].get<bool>();
 
                     m_layers[layer_index].tiles.push_back(tile);
                 }
